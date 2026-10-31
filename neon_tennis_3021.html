@@ -1,0 +1,3051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>NEON TENNIS 3021</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070711;
+      --p1: #00f0ff;
+      --p1-glow: rgba(0, 240, 255, 0.6);
+      --ai: #ff0077;
+      --ai-glow: rgba(255, 0, 119, 0.6);
+      --ball: #ffe600;
+      --ball-glow: rgba(255, 230, 0, 0.85);
+      --card-bg: rgba(14, 15, 30, 0.94);
+      --border: rgba(255, 255, 255, 0.18);
+      --gold: #ffd700;
+      --coin: #ffb703;
+      --bday-pink: #ff66cc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background-color: var(--bg);
+    }
+
+    body {
+      background-image: 
+        radial-gradient(circle at 50% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 85%, rgba(255, 0, 119, 0.08) 0%, transparent 50%);
+      font-family: 'Rajdhani', sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+
+    #rotate-hint {
+      display: none;
+      position: fixed;
+      top: 6px;
+      z-index: 99;
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--p1);
+      color: var(--p1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      font-family: 'Orbitron', monospace;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @media screen and (orientation: portrait) and (max-width: 800px) {
+      #rotate-hint { display: block; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    #wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(97vw, calc(86vh * 1.6));
+      gap: 6px;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #090a14;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2), 0 0 35px rgba(255, 0, 119, 0.2), inset 0 0 40px rgba(0,0,0,0.85);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* TOP BAR CONTROLS (ONLY ON MENUS) */
+    .top-controls-bar {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    .top-left-group, .top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: all;
+    }
+
+    .top-btn {
+      background: rgba(14, 16, 32, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: var(--p1);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .top-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: #fff;
+      color: #fff;
+    }
+
+    .tourney-badge-btn {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 120, 0, 0.15));
+      border: 1.5px solid var(--gold);
+      color: var(--gold);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+      animation: tourneyGlow 2.5s infinite alternate;
+    }
+
+    @keyframes tourneyGlow {
+      0% { box-shadow: 0 0 6px rgba(255, 215, 0, 0.2); }
+      100% { box-shadow: 0 0 16px rgba(255, 215, 0, 0.55); }
+    }
+
+    .tourney-badge-btn:hover {
+      background: var(--gold);
+      color: #000;
+    }
+
+    .coin-badge {
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid var(--coin);
+      color: var(--coin);
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* BIRTHDAY BANNER */
+    #birthdayBanner {
+      display: none;
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #ff0077, #ff66cc, #ffe600);
+      color: #000;
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 0.75rem;
+      padding: 5px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 102, 204, 0.8);
+      z-index: 24;
+      white-space: nowrap;
+      animation: bounce 1.2s infinite alternate;
+    }
+
+    @keyframes bounce {
+      0% { transform: translate(-50%, 0); }
+      100% { transform: translate(-50%, -4px); }
+    }
+
+    /* ENLARGED AD SLOT */
+    #large-bottom-ad {
+      width: 100%;
+      min-height: 70px;
+      background: rgba(14, 17, 35, 0.95);
+      border: 1.5px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.1), inset 0 0 10px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ad-main-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: #fff;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .ad-tag-badge {
+      background: rgba(255, 0, 119, 0.25);
+      border: 1px solid var(--ai);
+      color: var(--ai);
+      font-size: 0.65rem;
+      font-family: 'Orbitron', monospace;
+      padding: 3px 6px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+
+    .ad-hero-img {
+      height: 54px;
+      max-width: 120px;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: none;
+      flex-shrink: 0;
+      background: #000;
+    }
+
+    .ad-text-block {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      gap: 2px;
+    }
+
+    .ad-headline {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #00f0ff;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+    }
+
+    .ad-subtext {
+      font-size: 0.72rem;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ad-admin-lock {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #aaa;
+      font-size: 0.65rem;
+      font-family: 'Orbitron', monospace;
+      padding: 6px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Screen Overlays */
+    .overlay-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7, 8, 16, 0.96);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      padding: 10px;
+      text-align: center;
+      overflow-y: auto;
+    }
+
+    .overlay-screen.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    h1.title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.4rem, 3.8vw, 2.4rem);
+      font-weight: 900;
+      letter-spacing: 3px;
+      margin-bottom: 2px;
+      background: linear-gradient(135deg, var(--p1) 20%, #fff 50%, var(--ai) 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.5));
+    }
+
+    .arcade-subtitle {
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      color: #00f0ff;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      font-family: 'Orbitron', monospace;
+    }
+
+    h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.05rem, 2.8vw, 1.45rem);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .user-box label {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      color: var(--p1);
+    }
+
+    .user-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      width: 140px;
+    }
+
+    /* BOX CARD GRID FOR MAIN MENU */
+    .menu-box-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: min(94%, 560px);
+      margin-bottom: 6px;
+    }
+
+    .menu-card-box {
+      background: rgba(18, 22, 45, 0.88);
+      border: 1.5px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      padding: 10px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 0 10px rgba(0, 240, 255, 0.08);
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      min-height: 64px;
+    }
+
+    .menu-card-box:active { transform: scale(0.96); }
+
+    .menu-card-box:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .menu-card-box.accent-shop {
+      border-color: rgba(255, 183, 3, 0.5);
+      background: linear-gradient(135deg, rgba(255, 183, 3, 0.12), rgba(20, 24, 50, 0.9));
+    }
+    .menu-card-box.accent-shop:hover {
+      border-color: var(--coin);
+      box-shadow: 0 0 16px rgba(255, 183, 3, 0.45);
+    }
+
+    .menu-card-box.accent-tut {
+      border-color: rgba(0, 255, 170, 0.5);
+      background: linear-gradient(135deg, rgba(0, 255, 170, 0.12), rgba(20, 24, 50, 0.9));
+    }
+    .menu-card-box.accent-tut:hover {
+      border-color: #00ffaa;
+      box-shadow: 0 0 16px rgba(0, 255, 170, 0.45);
+    }
+
+    /* Small Box Size for Birthday Special Arena */
+    .menu-card-box.accent-bday {
+      border-color: rgba(255, 102, 204, 0.5);
+      background: linear-gradient(135deg, rgba(255, 102, 204, 0.12), rgba(20, 24, 50, 0.9));
+    }
+    .menu-card-box.accent-bday:hover {
+      border-color: var(--bday-pink);
+      box-shadow: 0 0 16px rgba(255, 102, 204, 0.5);
+    }
+
+    /* Small Box Size for Settings & Languages */
+    .menu-card-box.accent-settings {
+      border-color: rgba(188, 19, 254, 0.5);
+      background: linear-gradient(135deg, rgba(188, 19, 254, 0.12), rgba(20, 24, 50, 0.9));
+    }
+    .menu-card-box.accent-settings:hover {
+      border-color: #bc13fe;
+      box-shadow: 0 0 16px rgba(188, 19, 254, 0.45);
+    }
+
+    .menu-card-icon { font-size: 1.35rem; }
+    .menu-card-title { font-family: 'Orbitron', monospace; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px; }
+    .menu-card-sub { font-size: 0.62rem; color: #aaa; text-align: center; }
+
+    /* Common Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: min(85%, 260px);
+    }
+
+    .btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 12px;
+      background: transparent;
+      border: 2px solid var(--p1);
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+      transition: all 0.15s ease;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn:hover {
+      background: var(--p1);
+      color: #000;
+      box-shadow: 0 0 20px var(--p1-glow);
+    }
+
+    .btn.secondary {
+      border-color: var(--ai);
+      box-shadow: 0 0 10px rgba(255, 0, 119, 0.2);
+    }
+    .btn.secondary:hover {
+      background: var(--ai);
+      color: #fff;
+      box-shadow: 0 0 20px var(--ai-glow);
+    }
+
+    .btn.gold {
+      border-color: var(--gold);
+      color: var(--gold);
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+    .btn.gold:hover {
+      background: var(--gold);
+      color: #000;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+
+    .btn.tertiary {
+      border-color: #6a7185;
+      font-size: 0.72rem;
+      min-height: 30px;
+    }
+
+    /* Grids & Cards */
+    .courts-grid, .skins-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      width: min(96%, 640px);
+      margin-bottom: 10px;
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .court-card, .skin-card {
+      background: rgba(20, 22, 40, 0.9);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .court-card.active, .skin-card.active {
+      border-color: var(--p1);
+      box-shadow: 0 0 14px var(--p1-glow);
+      background: rgba(0, 240, 255, 0.12);
+    }
+
+    .court-preview, .skin-preview {
+      width: 100%;
+      height: 42px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .court-name, .skin-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .card-actions-row {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .card-actions-row button {
+      flex: 1;
+      padding: 3px 4px;
+      font-size: 0.62rem;
+      min-height: 24px;
+    }
+
+    /* NATIONS SELECTION GRID */
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 6px;
+      width: min(96%, 620px);
+      max-height: 46vh;
+      overflow-y: auto;
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .country-card {
+      background: rgba(20, 24, 45, 0.85);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .country-card:hover {
+      border-color: var(--gold);
+      background: rgba(255, 215, 0, 0.12);
+    }
+
+    .country-card.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+      background: rgba(255, 215, 0, 0.2);
+    }
+
+    /* GENERATED SVG FLAG ICON */
+    .flag-icon {
+      width: 24px;
+      height: 16px;
+      border-radius: 2px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.8);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .flag-large {
+      width: 48px;
+      height: 32px;
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.8);
+      margin: 0 auto 4px auto;
+      display: block;
+    }
+
+    /* SHOP TABBED SYSTEM */
+    .shop-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .shop-tab-btn {
+      background: rgba(20, 24, 48, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #bbb;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .shop-tab-btn.active {
+      background: var(--coin);
+      color: #000;
+      font-weight: 700;
+      border-color: var(--coin);
+      box-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      width: min(96%, 620px);
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 4px;
+      margin-bottom: 10px;
+    }
+
+    .shop-card {
+      background: rgba(18, 22, 44, 0.9);
+      border: 1.5px solid rgba(0, 240, 255, 0.3);
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .shop-icon { font-size: 1.5rem; }
+    .shop-title { font-family: 'Orbitron', monospace; font-size: 0.72rem; font-weight: 700; color: #fff; }
+    .shop-desc { font-size: 0.66rem; color: #aaa; min-height: 26px; }
+    .shop-price { font-family: 'Orbitron', monospace; font-size: 0.72rem; color: var(--coin); font-weight: 700; }
+
+    /* TUTORIAL SECTION */
+    .tutorial-container {
+      width: min(96%, 560px);
+      max-height: 50vh;
+      overflow-y: auto;
+      background: rgba(14, 18, 38, 0.88);
+      border: 1.5px solid rgba(0, 255, 170, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tut-section-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+
+    .tut-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.78rem;
+      color: #00ffaa;
+      margin-bottom: 4px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Matchup Preview Box */
+    .matchup-box {
+      background: rgba(18, 20, 38, 0.9);
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      border-radius: 12px;
+      padding: 14px 18px;
+      width: min(94%, 460px);
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bracket-nav-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .bracket-tab {
+      background: rgba(20, 22, 45, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #aaa;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem;
+      cursor: pointer;
+    }
+
+    .bracket-tab.active {
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+      font-weight: 700;
+    }
+
+    .bracket-matches-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+      width: min(96%, 660px);
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+
+    .bracket-match-card {
+      background: rgba(16, 18, 36, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    .bracket-match-card.user-match {
+      border-color: var(--p1);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    }
+
+    .bracket-team-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+
+    .bracket-team-row.winner {
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .lang-search-box {
+      width: 100%;
+      margin-bottom: 6px;
+    }
+
+    .lang-search-box input {
+      width: 100%;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      padding: 5px 8px;
+      border-radius: 6px;
+      color: #fff;
+      font-family: inherit;
+    }
+
+    .lang-list {
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 4px;
+    }
+
+    .lang-item {
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      transition: background 0.1s;
+    }
+
+    .lang-item:hover { background: rgba(0, 240, 255, 0.2); }
+    .lang-item.selected {
+      background: rgba(0, 240, 255, 0.35);
+      font-weight: 700;
+      color: #00f0ff;
+    }
+
+    .settings-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 10px;
+      width: min(94%, 380px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      font-size: 0.84rem;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    select, input[type="range"], input[type="text"], input[type="password"], input[type="date"] {
+      background: #18192a;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: inherit;
+      outline: none;
+      font-size: 0.82rem;
+    }
+
+    /* IN-GAME HUD (NO OVERLAPPING: LEFT SIDE ONLY) */
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .hud-tag {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      color: var(--p1);
+      background: rgba(0,0,0,0.75);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .hud-btn {
+      pointer-events: all;
+      background: rgba(14, 15, 30, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+      color: #fff;
+      min-height: 28px;
+      padding: 3px 10px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(0, 240, 255, 0.25);
+      border-color: #00f0ff;
+    }
+
+    /* SEPARATED IN-GAME CONTROLS: TOP RIGHT (AUDIO + EXIT) */
+    #inGameControlsRight {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 15;
+    }
+
+    #countdown {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(3rem, 9vw, 5.2rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 25px var(--ball-glow);
+      pointer-events: none;
+      z-index: 15;
+      display: none;
+    }
+
+    /* TRY SKIN MODAL */
+    #trySkinModal {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 5, 12, 0.95);
+      z-index: 35;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    #trySkinModal.active { display: flex; }
+
+    #tryCanvas {
+      width: min(92%, 460px);
+      aspect-ratio: 16 / 9;
+      background: #090a14;
+      border: 2px solid var(--p1);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .game-disclaimer {
+      font-size: clamp(0.53rem, 1.15vw, 0.64rem);
+      color: #7b8196;
+      line-height: 1.35;
+      max-width: 480px;
+      margin-top: 6px;
+      opacity: 0.8;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="rotate-hint">🔄 ROTATE FOR LANDSCAPE</div>
+
+  <div id="wrapper">
+    <div id="game-container">
+      <canvas id="pongCanvas" width="850" height="530"></canvas>
+
+      <!-- TOP BAR WIDGETS (MENUS ONLY) -->
+      <div class="top-controls-bar" id="topControlsBar">
+        <div class="top-left-group">
+          <!-- World Championship button cleanly isolated -->
+          <button class="top-btn tourney-badge-btn" id="headerTourneyBtn" onclick="openTourneySetup()">🏆 WORLD CHAMPIONSHIP</button>
+          <div class="coin-badge">🪙 <span id="coinBalanceDisplay">300</span></div>
+        </div>
+        <div class="top-right-group">
+          <button id="globalMuteBtn" class="top-btn" title="Toggle Audio">
+            <span id="muteIcon">🔊</span> <span id="muteLabel">SOUND: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Birthday Banner (Active ONLY on Player's Birthday) -->
+      <div id="birthdayBanner">🎂 HAPPY BIRTHDAY, ACE PILOT! ENJOY YOUR SPECIAL ARENA! 🎉</div>
+
+      <!-- In-Game Left HUD: Pilot and Pause Button -->
+      <div id="hud" style="display:none;">
+        <span id="hudPlayerTag" class="hud-tag">PILOT</span>
+        <button id="pauseBtn" class="hud-btn">⏸️ PAUSE</button>
+      </div>
+
+      <!-- In-Game Right Controls: Sound + Exit (No overlap, cleanly placed) -->
+      <div id="inGameControlsRight">
+        <button id="inGameMuteBtn" class="hud-btn" title="Toggle Sound">🔊</button>
+        <button id="quitBtn" class="hud-btn" style="border-color:#ff0077; color:#ff6699;">EXIT</button>
+      </div>
+
+      <!-- Countdown -->
+      <div id="countdown">3</div>
+
+      <!-- SCREEN: MAIN MENU -->
+      <div id="mainMenu" class="overlay-screen active">
+        <h1 class="title">NEON TENNIS 3021</h1>
+        <div class="arcade-subtitle">⚡ Classic Arcade Reimagined ⚡</div>
+
+        <div class="user-box">
+          <label for="usernameInput">PLAYER NAME:</label>
+          <input type="text" id="usernameInput" maxlength="12" value="ACE_3021">
+        </div>
+
+        <!-- BOX-LIKE BUTTON INTERFACE -->
+        <div class="menu-box-grid">
+          <div class="menu-card-box" id="btnPlay">
+            <span class="menu-card-icon">⚡</span>
+            <span class="menu-card-title">QUICK MATCH</span>
+            <span class="menu-card-sub">Instant battle against AI</span>
+          </div>
+
+          <div class="menu-card-box accent-shop" onclick="openShop('powerups')">
+            <span class="menu-card-icon">🛍️</span>
+            <span class="menu-card-title">SHOP</span>
+            <span class="menu-card-sub">Powerups, Skins & Courts</span>
+          </div>
+
+          <div class="menu-card-box accent-tut" onclick="showScreen('tutorialMenu')">
+            <span class="menu-card-icon">📖</span>
+            <span class="menu-card-title">HOW TO PLAY</span>
+            <span class="menu-card-sub">Rules & Coin tutorial</span>
+          </div>
+
+          <!-- Smaller Box Size for Birthday Special Arena -->
+          <div class="menu-card-box accent-bday" onclick="openBirthdayModal()">
+            <span class="menu-card-icon">🎂</span>
+            <span class="menu-card-title">BIRTHDAY ARENA</span>
+            <span class="menu-card-sub">Exclusive on your DOB</span>
+          </div>
+
+          <!-- Box Size for Settings & Languages -->
+          <div class="menu-card-box accent-settings" id="btnSettings" style="grid-column: span 2;">
+            <span class="menu-card-icon">⚙️</span>
+            <span class="menu-card-title">SYSTEM SETTINGS & LANGUAGES</span>
+            <span class="menu-card-sub">Speed, Audio, Date of Birth & Global Languages</span>
+          </div>
+        </div>
+
+        <p class="game-disclaimer">
+          <strong>Notice:</strong> This game is inspired on classic arcade games.<br>
+          Disclaimer: Neon Tennis 3021 is an independent, fictional indie game. All names, characters, and incidents portrayed in this production are entirely text-based or algorithmic works of fiction. No identification with actual persons, trademarked entities, or existing video games is intended or should be inferred.
+        </p>
+      </div>
+
+      <!-- SCREEN: BIRTHDAY UNLOCK MODAL -->
+      <div id="birthdayModal" class="overlay-screen">
+        <h2 style="color:var(--bday-pink);">🎂 BIRTHDAY SPECIAL ARENA</h2>
+        <div class="settings-panel" style="text-align:center;">
+          <p style="font-size:0.8rem; color:#ddd; margin-bottom:10px;">Enter your Date of Birth. The Birthday Special cake & confetti skin is available <strong>only on the date of your birthday</strong>!</p>
+          <div class="setting-item" style="justify-content:center;">
+            <input type="date" id="bdayInput" style="padding:6px 12px; font-size:1rem; text-align:center;">
+          </div>
+          <p id="bdayStatusMsg" style="font-size:0.75rem; color:#00ffaa; margin-top:6px; min-height:18px;"></p>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn gold" style="flex:1;" onclick="submitBirthday()">SAVE DOB 🎁</button>
+            <button class="btn tertiary" onclick="showScreen('mainMenu')">BACK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: COMBINED SHOP (POWERUPS, SKINS, BACKGROUNDS) -->
+      <div id="shopMenu" class="overlay-screen">
+        <h2 style="color:var(--coin);">🛍️ THE CYBER SHOP</h2>
+        <div class="shop-tabs">
+          <button class="shop-tab-btn active" id="shopTabPowerups" onclick="switchShopTab('powerups')">⚡ POWERUPS</button>
+          <button class="shop-tab-btn" id="shopTabSkins" onclick="switchShopTab('skins')">🎨 SKINS</button>
+          <button class="shop-tab-btn" id="shopTabCourts" onclick="switchShopTab('courts')">🏟️ BACKGROUNDS</button>
+        </div>
+
+        <!-- TAB CONTENT: POWERUPS -->
+        <div id="shopPowerupsSection" class="shop-grid">
+          <div class="shop-card">
+            <span class="shop-icon">🛡️</span>
+            <span class="shop-title">FORCE SHIELD</span>
+            <span class="shop-desc">Blocks 1 conceded ball automatically.</span>
+            <span class="shop-price">🪙 150</span>
+            <button class="btn tertiary" onclick="buyPowerup('shield', 150)">BUY (Owned: <span id="ownedShieldCount">0</span>)</button>
+          </div>
+          <div class="shop-card">
+            <span class="shop-icon">📏</span>
+            <span class="shop-title">TITAN PADDLE</span>
+            <span class="shop-desc">+35% extended paddle size for whole match.</span>
+            <span class="shop-price">🪙 120</span>
+            <button class="btn tertiary" onclick="buyPowerup('titan', 120)">BUY (Owned: <span id="ownedTitanCount">0</span>)</button>
+          </div>
+          <div class="shop-card">
+            <span class="shop-icon">⏳</span>
+            <span class="shop-title">CHRONO SLOW</span>
+            <span class="shop-desc">Slows incoming ball by 35% on your court side.</span>
+            <span class="shop-price">🪙 180</span>
+            <button class="btn tertiary" onclick="buyPowerup('chrono', 180)">BUY (Owned: <span id="ownedChronoCount">0</span>)</button>
+          </div>
+          <div class="shop-card">
+            <span class="shop-icon">🔥</span>
+            <span class="shop-title">HYPER SMASH</span>
+            <span class="shop-desc">Unleashes a hyper cut volley on edge hits.</span>
+            <span class="shop-price">🪙 200</span>
+            <button class="btn tertiary" onclick="buyPowerup('hyper', 200)">BUY (Owned: <span id="ownedHyperCount">0</span>)</button>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: SKINS (INTEGRATED INTO SHOP) -->
+        <div id="shopSkinsSection" class="skins-grid" style="display:none;"></div>
+
+        <!-- TAB CONTENT: COURTS -->
+        <div id="shopCourtsSection" class="courts-grid" style="display:none;"></div>
+
+        <button class="btn" style="margin-top:6px;" onclick="showScreen('mainMenu')">BACK TO MENU</button>
+      </div>
+
+      <!-- SCREEN: HOW TO PLAY & COIN ECONOMY TUTORIAL -->
+      <div id="tutorialMenu" class="overlay-screen">
+        <h2 style="color:#00ffaa;">📖 TUTORIAL & ECONOMY GUIDE</h2>
+        <div class="tutorial-container">
+          <div class="tut-section-card">
+            <div class="tut-title">🎮 HOW TO PLAY</div>
+            <p>• <strong>Paddle Movement:</strong> Move mouse cursor up and down, or slide your finger on mobile touchscreen. You can also press [W/S] or [▲/▼] arrow keys.</p>
+            <p>• <strong>Edge Slice & Spin:</strong> Hitting the ball with the outer corners of your paddle imparts aggressive deflection angles and speed bursts.</p>
+            <p>• <strong>Pause Control:</strong> Press <strong>PAUSE</strong> at any time or hit [P] on your keyboard.</p>
+            <p>• <strong>Victory:</strong> Reach the match target score before the AI to win the round!</p>
+          </div>
+
+          <div class="tut-section-card">
+            <div class="tut-title">🪙 COIN EARNING SYSTEM TUTORIAL</div>
+            <p>Coins allow you to purchase game-changing powerups, gradient skins, and court backgrounds in the SHOP:</p>
+            <p>• <strong>Volley Rally:</strong> +1 Coin for every paddle hit during an active rally.</p>
+            <p>• <strong>Scored Point:</strong> +10 Coins every time you breach the opponent's defense.</p>
+            <p>• <strong>Quick Match Win:</strong> +50 Coins bonus upon match completion.</p>
+            <p>• <strong>Tournament Stages:</strong> Win knockout rounds in the World Championship to earn +150 to +450 Coins per stage.</p>
+            <p>• <strong>Championship Grand Prize:</strong> +1000 Coins and your choice of exclusive National Champion Skins!</p>
+            <p>• <strong>Birthday Gift:</strong> +500 Coins awarded on your birthday!</p>
+          </div>
+        </div>
+        <button class="btn" onclick="showScreen('mainMenu')">BACK TO MENU</button>
+      </div>
+
+      <!-- SCREEN: WORLD TOURNAMENT - NATION SELECT (NO SHORT FORMS, FULL FLAGS) -->
+      <div id="tourneyNationMenu" class="overlay-screen">
+        <h2 style="color:var(--gold);">🏆 CHOOSE YOUR NATION (32 TEAMS)</h2>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">Direct Knockout: Round of 32 → Grand Final.</p>
+        <div id="countryListGrid" class="country-grid"></div>
+        <div class="btn-group">
+          <button class="btn gold" onclick="confirmTourneyNation()">NEXT: SPEED SETUP</button>
+          <button class="btn tertiary" onclick="showScreen('mainMenu')">BACK</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: WORLD TOURNAMENT - SPEED SETUP -->
+      <div id="tourneyCourtMenu" class="overlay-screen">
+        <h2 style="color:var(--gold);">🏆 CHAMPIONSHIP SETTINGS</h2>
+        <div class="settings-panel" style="margin-bottom:10px;">
+          <div class="setting-item">
+            <label for="tourneyBallSpeedSelect">Championship Ball Speed</label>
+            <select id="tourneyBallSpeedSelect">
+              <option value="6.5">Slow (Tactical Control)</option>
+              <option value="8.5" selected>Normal (Standard Arcade)</option>
+              <option value="11.0">Fast (High Tempo)</option>
+              <option value="13.5">Turbo Hyper (Extreme Reflexes)</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">Each nation features its own national stadium background!</p>
+        <div class="btn-group">
+          <button class="btn gold" onclick="generateTournamentBracket()">GENERATE BRACKET</button>
+          <button class="btn tertiary" onclick="showScreen('tourneyNationMenu')">BACK</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: WORLD TOURNAMENT - MATCH PREVIEW (NO TEXT OVERLAP) -->
+      <div id="tourneyBracketMenu" class="overlay-screen">
+        <h2 id="tourneyRoundHeader" style="color:var(--gold);">ROUND OF 32</h2>
+        <div class="matchup-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,215,0,0.3); padding-bottom:4px;">
+            <span id="tourneyDifficultyTag" style="font-size:0.75rem; color:var(--gold); font-family:'Orbitron', monospace;">DIFFICULTY: HARD</span>
+            <button class="btn tertiary" style="min-height:24px; padding:2px 6px; font-size:0.65rem;" onclick="viewFullBracket()">VIEW BRACKET 📋</button>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-around; font-family:'Orbitron', monospace; font-size:1.05rem; font-weight:700;">
+            <div style="text-align:center;">
+              <div id="tourneyP1FlagBox"></div>
+              <div id="tourneyP1Name" style="color:var(--p1); font-size:0.85rem;">India</div>
+            </div>
+            <div style="font-size:1rem; color:#ff0077; font-weight:900;">VS</div>
+            <div style="text-align:center;">
+              <div id="tourneyAiFlagBox"></div>
+              <div id="tourneyAiName" style="color:var(--ai); font-size:0.85rem;">China</div>
+            </div>
+          </div>
+          <p id="tourneyStageSummary" style="font-size:0.72rem; color:#aaa;">Playing in National Arena. One defeat and you are knocked out!</p>
+        </div>
+        <div class="btn-group">
+          <button class="btn gold" onclick="startTourneyMatch()">ENTER ARENA</button>
+          <button class="btn tertiary" onclick="viewFullBracket()">VIEW FULL BRACKET</button>
+          <button class="btn tertiary" onclick="quitToMenu()">ABANDON TOURNAMENT</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: FULL TOURNAMENT BRACKET -->
+      <div id="tourneyFullBracketMenu" class="overlay-screen">
+        <h2 style="color:var(--gold);">🏆 CHAMPIONSHIP BRACKET</h2>
+        <div class="bracket-nav-tabs" id="bracketTabsBar"></div>
+        <div class="bracket-matches-list" id="bracketMatchesList"></div>
+        <button class="btn gold" onclick="showScreen('tourneyBracketMenu')">BACK TO MATCH</button>
+      </div>
+
+      <!-- SCREEN: TOURNAMENT KNOCKOUT -->
+      <div id="tourneyKnockoutMenu" class="overlay-screen">
+        <h2 style="color:#ff0077; font-size:2rem;">ELIMINATED!</h2>
+        <p id="knockoutDesc" style="color:#ccc; margin-bottom:14px; font-size:1rem;">Knocked out of the World Championship.</p>
+        <div class="btn-group">
+          <button class="btn gold" onclick="openTourneySetup()">TRY AGAIN</button>
+          <button class="btn tertiary" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: CHAMPION REWARD CHOICE (SELECT 1 OF 2 DESIGNS) -->
+      <div id="tourneyChampionRewardMenu" class="overlay-screen">
+        <h2 style="color:var(--gold); font-size:2rem;">🏆 WORLD CHAMPION 3021!</h2>
+        <p id="champRewardDesc" style="color:#00f0ff; margin-bottom:6px; font-weight:700;">CONGRATULATIONS!</p>
+        <p style="color:#fff; font-size:0.8rem; margin-bottom:10px;">Select 1 of 2 exclusive National Champion skin variants to unlock:</p>
+        <div class="skins-grid" id="champChoiceGrid" style="max-height:36vh;"></div>
+        <p style="color:var(--coin); font-size:0.8rem; margin-top:4px;">+1000 Coins added to your vault!</p>
+      </div>
+
+      <!-- SCREEN: QUICK MATCH DIFFICULTY -->
+      <div id="difficultyMenu" class="overlay-screen">
+        <h2>SELECT DIFFICULTY</h2>
+        <div class="btn-group">
+          <button class="btn" onclick="startQuickGame('easy')">NORMAL</button>
+          <button class="btn secondary" onclick="startQuickGame('medium')">HARD</button>
+          <button class="btn" style="border-color:#ff9900; box-shadow:0 0 10px rgba(255,153,0,0.3);" onclick="startQuickGame('hard')">VERY HARD</button>
+          <button class="btn" style="border-color:#ff3333; box-shadow:0 0 10px rgba(255,51,51,0.3);" onclick="startQuickGame('expert')">EXPERT 🔥</button>
+          <button class="btn" style="border-color:#bc13fe; box-shadow:0 0 14px rgba(188,19,254,0.5); color:#bc13fe;" onclick="startQuickGame('god')">CYBER GOD ⚡</button>
+          <button class="btn tertiary" onclick="showScreen('mainMenu')">BACK</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: SETTINGS & LANGUAGES -->
+      <div id="settingsMenu" class="overlay-screen">
+        <h2>SETTINGS</h2>
+        <div class="settings-panel">
+          <div class="setting-item">
+            <label for="courtSelect">Court Background</label>
+            <select id="courtSelect" onchange="selectCourt(this.value)">
+              <option value="cyber">Cyber Neon</option>
+              <option value="classic">Classic Tennis</option>
+              <option value="grass">Emerald Turf</option>
+              <option value="clay">Roland Clay</option>
+              <option value="synthwave">Synthwave Sunset</option>
+              <option value="space">Galactic Void</option>
+              <option value="frost">Arctic Frost</option>
+              <option value="tokyo">Tokyo Cyberpunk</option>
+              <option value="birthday">🎂 Birthday Special (DOB Only)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="volumeSlider">Volume</label>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.7">
+          </div>
+          <div class="setting-item">
+            <label for="ballSpeedSelect">Base Ball Speed</label>
+            <select id="ballSpeedSelect">
+              <option value="6.5">Slow</option>
+              <option value="8.5" selected>Normal</option>
+              <option value="11">Turbo</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="winScoreSelect">Target Score</label>
+            <select id="winScoreSelect">
+              <option value="3">3 Points</option>
+              <option value="5" selected>5 Points</option>
+              <option value="7">7 Points</option>
+              <option value="11">11 Points</option>
+              <option value="21">21 Points (Arcade Max)</option>
+            </select>
+          </div>
+
+          <!-- BIRTHDAY / DOB CONFIGURATION IN SETTINGS -->
+          <div class="setting-item" style="border-top:1px solid rgba(255,255,255,0.15); padding-top:8px;">
+            <label for="settingsDobInput">🎂 Date of Birth</label>
+            <div style="display:flex; gap:6px;">
+              <input type="date" id="settingsDobInput" style="font-size:0.75rem;">
+              <button class="btn" style="min-height:26px; padding:2px 8px; font-size:0.65rem;" onclick="saveDobFromSettings()">SET</button>
+            </div>
+          </div>
+
+          <!-- LANGUAGES SECTION WITH SEARCH -->
+          <div style="border-top: 1px solid rgba(255,255,255,0.15); padding-top: 8px; margin-top: 4px;">
+            <label style="font-family:'Orbitron', monospace; font-size:0.75rem; color:#00f0ff; display:block; margin-bottom:4px;">🌐 GLOBAL LANGUAGES</label>
+            <div class="lang-search-box">
+              <input type="text" id="langSearchInput" placeholder="Search language..." oninput="filterLanguages(this.value)">
+            </div>
+            <div class="lang-list" id="langListContainer"></div>
+          </div>
+        </div>
+        <div class="btn-group" style="margin-top: 8px;">
+          <button class="btn" onclick="saveSettings(); showScreen('mainMenu');">SAVE & BACK</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: PAUSE -->
+      <div id="pauseMenu" class="overlay-screen">
+        <h2>MATCH PAUSED</h2>
+        <div class="btn-group">
+          <button class="btn" id="resumeBtn">RESUME</button>
+          <button class="btn secondary" id="restartBtn">RESTART</button>
+          <button class="btn tertiary" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: GAME OVER -->
+      <div id="gameOverMenu" class="overlay-screen">
+        <h2 id="winnerTitle" style="font-size: 2rem; font-weight: 900;">VICTORY!</h2>
+        <p id="finalScore" style="color: #aaa; margin-bottom: 8px; font-size: 1.3rem;">5 - 3</p>
+        <p id="quickRewardDisplay" style="color:var(--coin); font-size:0.85rem; margin-bottom:12px;">+50 COINS EARNED!</p>
+        <div class="btn-group">
+          <button class="btn" onclick="restartMatch()">REMATCH</button>
+          <button class="btn tertiary" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+      </div>
+
+      <!-- TRY SKIN LIVE INTERACTIVE MODAL -->
+      <div id="trySkinModal">
+        <h2 style="font-size:1.1rem; color:var(--p1);" id="tryModalTitle">TEST DRIVE SKIN</h2>
+        <canvas id="tryCanvas" width="460" height="260"></canvas>
+        <p style="font-size:0.72rem; color:#aaa; margin-bottom:8px;">Glide your cursor or finger to test paddle response & ball glow.</p>
+        <button class="btn" onclick="closeTryModal()">CLOSE PREVIEW</button>
+      </div>
+
+      <!-- SCREEN: CREATOR AD CONSOLE -->
+      <div id="adminAdModal" class="overlay-screen">
+        <h2>CREATOR AD CONSOLE</h2>
+        <div class="settings-panel">
+          <div id="passcodeSection">
+            <p style="font-size:0.75rem; color:#aaa; margin-bottom:8px;">Creator Passcode (Default: admin3021):</p>
+            <div style="display:flex; gap:8px;">
+              <input type="password" id="creatorPasscode" placeholder="Passcode" style="flex:1;">
+              <button class="btn" style="min-height:30px; padding:2px 10px;" onclick="verifyCreatorPass()">UNLOCK</button>
+            </div>
+            <p id="passErr" style="color:#ff0077; font-size:0.75rem; margin-top:4px; display:none;">Incorrect Passcode!</p>
+          </div>
+          <div id="adEditFields" style="display:none; flex-direction:column; gap:8px;">
+            <div>
+              <label style="font-size:0.72rem; color:#888;">Headline Copy:</label>
+              <input type="text" id="adTextInput" placeholder="Headline..." style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:0.72rem; color:#888;">Sub-headline:</label>
+              <input type="text" id="adSubTextInput" placeholder="Sub-text..." style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:0.72rem; color:#888;">Target Link URL:</label>
+              <input type="text" id="adLinkInput" placeholder="https://..." style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:0.72rem; color:#888;">Upload Picture:</label>
+              <input type="file" id="adPicUpload" accept="image/*" style="font-size:0.7rem; width:100%;">
+            </div>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+              <button class="btn" style="flex:1;" onclick="saveCreatorAd()">SAVE AD</button>
+              <button class="btn tertiary" onclick="resetAdDefault()">RESET</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn tertiary" style="margin-top:8px;" onclick="closeAdminModal()">CLOSE</button>
+      </div>
+
+    </div>
+
+    <!-- ENLARGED BOTTOM AD BOX -->
+    <div id="large-bottom-ad">
+      <a id="adMainLink" class="ad-main-link" href="#" target="_blank" rel="noopener">
+        <span class="ad-tag-badge">SPONSORED</span>
+        <img id="adMainImg" class="ad-hero-img" alt="Ad Banner">
+        <div class="ad-text-block">
+          <span id="adHeadlineText" class="ad-headline">CYBER GRAND PRIX 3021 // REGISTRATIONS OPEN</span>
+          <span id="adSubTextDisplay" class="ad-subtext">Click here to claim your exclusive championship arcade racket!</span>
+        </div>
+      </a>
+      <button class="ad-admin-lock" onclick="openAdminModal()" title="Creator Ad Console (Passcode)">🔒 EDIT AD</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       AUDIO ENGINE
+       ========================================================= */
+    const AudioEngine = (() => {
+      let ctx = null;
+      let muted = false;
+      let masterVolume = 0.7;
+      let bgmInterval = null;
+      let step = 0;
+      const bassNotes = [55, 55, 110, 55, 65.41, 65.41, 130.81, 65.41, 73.42, 73.42, 146.83, 73.42, 82.41, 82.41, 164.81, 98.0];
+
+      function unlock() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        startBGM();
+      }
+
+      function startBGM() {
+        if (bgmInterval || muted || !ctx) return;
+        step = 0;
+        bgmInterval = setInterval(() => {
+          if (muted) return;
+          try {
+            const now = ctx.currentTime;
+            const bOsc = ctx.createOscillator();
+            const bGain = ctx.createGain();
+            bOsc.type = 'sawtooth';
+            bOsc.frequency.setValueAtTime(bassNotes[step % bassNotes.length], now);
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(300, now);
+
+            bGain.gain.setValueAtTime(masterVolume * 0.08, now);
+            bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+            bOsc.connect(filter);
+            filter.connect(bGain);
+            bGain.connect(ctx.destination);
+            bOsc.start(now);
+            bOsc.stop(now + 0.1);
+            step++;
+          } catch(e) {}
+        }, 125);
+      }
+
+      function stopBGM() {
+        if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+      }
+
+      function playTone(freq, type, duration, endFreq = null) {
+        if (muted) return;
+        try {
+          unlock();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), ctx.currentTime + duration);
+          gain.gain.setValueAtTime(masterVolume * 0.35, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch(e) {}
+      }
+
+      function crowdApplause(duration = 1.6) {
+        if (muted) return;
+        try {
+          unlock();
+          if (!ctx) return;
+          const sampleRate = ctx.sampleRate;
+          const bufferSize = sampleRate * duration;
+          const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * (0.8 + 0.2 * Math.sin(i / 150));
+          }
+          const noise = ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(1400, ctx.currentTime);
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(masterVolume * 0.35, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          noise.start();
+          noise.stop(ctx.currentTime + duration);
+        } catch(e) {}
+      }
+
+      return {
+        unlock,
+        paddleHit() { playTone(460, 'triangle', 0.08, 680); },
+        wallHit() { playTone(240, 'square', 0.06, 180); },
+        coinChime() { playTone(988, 'sine', 0.15, 1320); },
+        score() {
+          playTone(200, 'sawtooth', 0.35, 70);
+          crowdApplause(1.5);
+        },
+        win() {
+          crowdApplause(2.6);
+          [523, 659, 784, 1046].forEach((f, i) => {
+            setTimeout(() => playTone(f, 'sine', 0.25), i * 100);
+          });
+        },
+        toggleMute() {
+          muted = !muted;
+          if (muted) stopBGM();
+          else startBGM();
+          return muted;
+        },
+        isMuted() { return muted; },
+        setVolume(v) { masterVolume = v; }
+      };
+    })();
+
+    ['touchstart', 'pointerdown', 'mousemove', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, () => AudioEngine.unlock(), { once: true, passive: true });
+    });
+
+    /* =========================================================
+       32 NATIONS: CUSTOM VECTOR FLAGS, COLORS & CUSTOM BACKGROUNDS
+       ========================================================= */
+    const TOP_32_COUNTRIES = [
+      { name: "Argentina", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#75aadb"/><rect y="13.3" width="60" height="13.3" fill="#ffffff"/><rect y="26.6" width="60" height="13.3" fill="#75aadb"/><circle cx="30" cy="20" r="4" fill="#f6b40e"/></svg>', bgTheme: { court: '#1c304a', lines: '#75aadb', net: '#f6b40e' }, pA: ["#75aadb", "#ffffff", "#75aadb"], pB: ["#f6b40e", "#002060"], bCol: "#f6b40e", glow: "#75aadb" },
+      { name: "Bangladesh", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#006a4e"/><circle cx="26" cy="20" r="10" fill="#f42a41"/></svg>', bgTheme: { court: '#0b261b', lines: '#00ff88', net: '#f42a41' }, pA: ["#006a4e", "#f42a41"], pB: ["#f42a41", "#023020"], bCol: "#f42a41", glow: "#006a4e" },
+      { name: "Brazil", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#009b3a"/><polygon points="30,4 56,20 30,36 4,20" fill="#fedf00"/><circle cx="30" cy="20" r="7" fill="#002776"/></svg>', bgTheme: { court: '#143818', lines: '#fedf00', net: '#00e1ff' }, pA: ["#009b3a", "#fedf00", "#002776"], pB: ["#fedf00", "#009b3a"], bCol: "#fedf00", glow: "#009b3a" },
+      { name: "China", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#de2910"/><polygon points="10,5 12,11 18,11 13,15 15,21 10,17 5,21 7,15 2,11 8,11" fill="#ffde00"/></svg>', bgTheme: { court: '#3b0a0a', lines: '#ffde00', net: '#ff3333' }, pA: ["#de2910", "#ffde00"], pB: ["#ff0000", "#ffaa00"], bCol: "#ffde00", glow: "#de2910" },
+      { name: "Colombia", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="20" fill="#fcd116"/><rect y="20" width="60" height="10" fill="#003893"/><rect y="30" width="60" height="10" fill="#ce1126"/></svg>', bgTheme: { court: '#2b2608', lines: '#fcd116', net: '#ce1126' }, pA: ["#fcd116", "#003893", "#ce1126"], pB: ["#003893", "#fcd116"], bCol: "#fcd116", glow: "#ce1126" },
+      { name: "DR Congo", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#007fff"/><polygon points="0,34 50,0 60,0 60,6 10,40 0,40" fill="#ce1126"/><polygon points="0,32 48,0 52,0 0,35" fill="#fcd116"/><polygon points="8,40 60,5 60,8 12,40" fill="#fcd116"/></svg>', bgTheme: { court: '#0b2647', lines: '#00f0ff', net: '#fcd116' }, pA: ["#007fff", "#fcd116", "#ce1126"], pB: ["#fcd116", "#007fff"], bCol: "#fcd116", glow: "#007fff" },
+      { name: "Egypt", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#ce1126"/><rect y="13.3" width="60" height="13.3" fill="#ffffff"/><rect y="26.6" width="60" height="13.3" fill="#000000"/><circle cx="30" cy="20" r="3" fill="#c09300"/></svg>', bgTheme: { court: '#2b1b14', lines: '#c09300', net: '#ce1126' }, pA: ["#ce1126", "#ffffff", "#000000"], pB: ["#c09300", "#ce1126"], bCol: "#c09300", glow: "#ce1126" },
+      { name: "Ethiopia", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#078930"/><rect y="13.3" width="60" height="13.3" fill="#fcdd09"/><rect y="26.6" width="60" height="13.3" fill="#da121a"/><circle cx="30" cy="20" r="5" fill="#0f47af"/></svg>', bgTheme: { court: '#1c2912', lines: '#fcdd09', net: '#078930' }, pA: ["#078930", "#fcdd09", "#da121a"], pB: ["#fcdd09", "#078930"], bCol: "#fcdd09", glow: "#078930" },
+      { name: "France", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="20" height="40" fill="#002395"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ed2939"/></svg>', bgTheme: { court: '#0b1638', lines: '#ffffff', net: '#ed2939' }, pA: ["#002395", "#ffffff", "#ed2939"], pB: ["#ed2939", "#002395"], bCol: "#00f0ff", glow: "#ed2939" },
+      { name: "Germany", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#000000"/><rect y="13.3" width="60" height="13.3" fill="#dd0000"/><rect y="26.6" width="60" height="13.3" fill="#ffce00"/></svg>', bgTheme: { court: '#1c150a', lines: '#ffce00', net: '#dd0000' }, pA: ["#000000", "#dd0000", "#ffce00"], pB: ["#ffce00", "#dd0000"], bCol: "#ffce00", glow: "#dd0000" },
+      { name: "India", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#ff9933"/><rect y="13.3" width="60" height="13.3" fill="#ffffff"/><rect y="26.6" width="60" height="13.3" fill="#138808"/><circle cx="30" cy="20" r="4" fill="#000088"/></svg>', bgTheme: { court: '#2b1a0a', lines: '#ff9933', net: '#00ffff' }, pA: ["#ff9933", "#ffffff", "#138808"], pB: ["#ff9933", "#000088", "#138808"], bCol: "#000088", glow: "#ff9933" },
+      { name: "Indonesia", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="20" fill="#ce1126"/><rect y="20" width="60" height="20" fill="#ffffff"/></svg>', bgTheme: { court: '#2e0e12', lines: '#ffffff', net: '#ce1126' }, pA: ["#ce1126", "#ffffff"], pB: ["#ce1126", "#440000"], bCol: "#ce1126", glow: "#ffffff" },
+      { name: "Iran", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#239f40"/><rect y="13.3" width="60" height="13.3" fill="#ffffff"/><rect y="26.6" width="60" height="13.3" fill="#da0000"/></svg>', bgTheme: { court: '#132b18', lines: '#239f40', net: '#da0000' }, pA: ["#239f40", "#ffffff", "#da0000"], pB: ["#239f40", "#da0000"], bCol: "#239f40", glow: "#da0000" },
+      { name: "Italy", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>', bgTheme: { court: '#0d2b16', lines: '#ffffff', net: '#ce2b37' }, pA: ["#009246", "#ffffff", "#ce2b37"], pB: ["#009246", "#ce2b37"], bCol: "#009246", glow: "#ce2b37" },
+      { name: "Japan", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#ffffff"/><circle cx="30" cy="20" r="10" fill="#bc002d"/></svg>', bgTheme: { court: '#2b1b22', lines: '#ff6688', net: '#ffffff' }, pA: ["#ffffff", "#bc002d"], pB: ["#bc002d", "#ff6b81"], bCol: "#bc002d", glow: "#ffffff" },
+      { name: "Kenya", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="12" fill="#000000"/><rect y="12" width="60" height="2" fill="#ffffff"/><rect y="14" width="60" height="12" fill="#bb0000"/><rect y="26" width="60" height="2" fill="#ffffff"/><rect y="28" width="60" height="12" fill="#006600"/></svg>', bgTheme: { court: '#182b13', lines: '#00ff77', net: '#bb0000' }, pA: ["#000000", "#bb0000", "#006600"], pB: ["#bb0000", "#006600"], bCol: "#bb0000", glow: "#006600" },
+      { name: "Mexico", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="20" height="40" fill="#006847"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce1126"/><circle cx="30" cy="20" r="4" fill="#8b5a2b"/></svg>', bgTheme: { court: '#152b1b', lines: '#00ff88', net: '#ce1126' }, pA: ["#006847", "#ffffff", "#ce1126"], pB: ["#006847", "#ce1126"], bCol: "#006847", glow: "#ce1126" },
+      { name: "Myanmar", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#fecb00"/><rect y="13.3" width="60" height="13.3" fill="#34b233"/><rect y="26.6" width="60" height="13.3" fill="#ea2839"/><polygon points="30,8 33,17 42,17 35,23 38,32 30,26 22,32 25,23 18,17 27,17" fill="#ffffff"/></svg>', bgTheme: { court: '#2b270a', lines: '#fecb00', net: '#34b233' }, pA: ["#fecb00", "#ea2839", "#34b233"], pB: ["#fecb00", "#34b233"], bCol: "#ffffff", glow: "#fecb00" },
+      { name: "Nigeria", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="20" height="40" fill="#008751"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#008751"/></svg>', bgTheme: { court: '#082617', lines: '#00ff88', net: '#ffffff' }, pA: ["#008751", "#ffffff", "#008751"], pB: ["#00ff88", "#005533"], bCol: "#00ff88", glow: "#008751" },
+      { name: "Pakistan", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="15" height="40" fill="#ffffff"/><rect x="15" width="45" height="40" fill="#01411c"/><circle cx="37" cy="20" r="8" fill="#ffffff"/><circle cx="39" cy="19" r="7" fill="#01411c"/></svg>', bgTheme: { court: '#0a2612', lines: '#ffffff', net: '#00ff77' }, pA: ["#01411c", "#ffffff"], pB: ["#01411c", "#00ff77"], bCol: "#01411c", glow: "#ffffff" },
+      { name: "Philippines", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="20" fill="#0038a8"/><rect y="20" width="60" height="20" fill="#ce1126"/><polygon points="0,0 26,20 0,40" fill="#ffffff"/></svg>', bgTheme: { court: '#0a1d3b', lines: '#00f0ff', net: '#ce1126' }, pA: ["#0038a8", "#ce1126", "#fcd116"], pB: ["#fcd116", "#0038a8"], bCol: "#fcd116", glow: "#0038a8" },
+      { name: "Russia", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#ffffff"/><rect y="13.3" width="60" height="13.3" fill="#0039a6"/><rect y="26.6" width="60" height="13.3" fill="#d52b1e"/></svg>', bgTheme: { court: '#101e3b', lines: '#ffffff', net: '#d52b1e' }, pA: ["#ffffff", "#0039a6", "#d52b1e"], pB: ["#0039a6", "#d52b1e"], bCol: "#0039a6", glow: "#d52b1e" },
+      { name: "South Africa", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="20" fill="#e03c31"/><rect y="20" width="60" height="20" fill="#001489"/><polygon points="0,0 22,20 0,40" fill="#000000"/><polygon points="0,0 26,20 0,40 0,35 20,20 0,5" fill="#ffb612"/></svg>', bgTheme: { court: '#112b18', lines: '#ffb612', net: '#00e1ff' }, pA: ["#007749", "#ffb612", "#001489"], pB: ["#ffb612", "#007749"], bCol: "#ffb612", glow: "#007749" },
+      { name: "South Korea", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#ffffff"/><circle cx="30" cy="20" r="8" fill="#cd2e3a"/><path d="M 22,20 A 8,8 0 0,0 38,20 Z" fill="#0047a0"/></svg>', bgTheme: { court: '#222638', lines: '#0047a0', net: '#cd2e3a' }, pA: ["#ffffff", "#cd2e3a", "#0047a0"], pB: ["#cd2e3a", "#0047a0"], bCol: "#cd2e3a", glow: "#0047a0" },
+      { name: "Sudan", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="13.3" fill="#d21034"/><rect y="13.3" width="60" height="13.3" fill="#ffffff"/><rect y="26.6" width="60" height="13.3" fill="#000000"/><polygon points="0,0 20,20 0,40" fill="#007229"/></svg>', bgTheme: { court: '#2b1016', lines: '#ffffff', net: '#007229' }, pA: ["#d21034", "#ffffff", "#007229"], pB: ["#007229", "#d21034"], bCol: "#007229", glow: "#d21034" },
+      { name: "Tanzania", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#1eb53a"/><polygon points="0,40 60,0 60,40" fill="#00a3dd"/><polygon points="0,40 60,0 52,0 0,35" fill="#fcd116"/><polygon points="0,40 60,0 60,5 8,40" fill="#fcd116"/><polygon points="0,40 60,0 56,0 0,37" fill="#000000"/></svg>', bgTheme: { court: '#0d2b29', lines: '#fcd116', net: '#00a3dd' }, pA: ["#1eb53a", "#00a3dd", "#fcd116"], pB: ["#00a3dd", "#1eb53a"], bCol: "#1eb53a", glow: "#00a3dd" },
+      { name: "Thailand", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="6.6" fill="#a51931"/><rect y="6.6" width="60" height="6.6" fill="#ffffff"/><rect y="13.2" width="60" height="13.6" fill="#2d2a4a"/><rect y="26.8" width="60" height="6.6" fill="#ffffff"/><rect y="33.4" width="60" height="6.6" fill="#a51931"/></svg>', bgTheme: { court: '#1a1838', lines: '#ffffff', net: '#a51931' }, pA: ["#a51931", "#ffffff", "#2d2a4a"], pB: ["#a51931", "#2d2a4a"], bCol: "#a51931", glow: "#2d2a4a" },
+      { name: "Turkey", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#e30a17"/><circle cx="24" cy="20" r="9" fill="#ffffff"/><circle cx="26" cy="20" r="7.5" fill="#e30a17"/><polygon points="35,20 38,22 37,18 40,16 36,16 35,12 34,16 30,16 33,18 32,22" fill="#ffffff"/></svg>', bgTheme: { court: '#380a0e', lines: '#ffffff', net: '#ff3344' }, pA: ["#e30a17", "#ffffff"], pB: ["#e30a17", "#660000"], bCol: "#ffffff", glow: "#e30a17" },
+      { name: "Uganda", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="6.6" fill="#000000"/><rect y="6.6" width="60" height="6.6" fill="#fcdc04"/><rect y="13.2" width="60" height="6.6" fill="#d90000"/><rect y="19.8" width="60" height="6.6" fill="#000000"/><rect y="26.4" width="60" height="6.6" fill="#fcdc04"/><rect y="33" width="60" height="6.6" fill="#d90000"/></svg>', bgTheme: { court: '#2b2108', lines: '#fcdc04', net: '#d90000' }, pA: ["#000000", "#fcdc04", "#d90000"], pB: ["#fcdc04", "#d90000"], bCol: "#fcdc04", glow: "#d90000" },
+      { name: "United Kingdom", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><polygon points="0,0 60,40 M60,0 0,40" stroke="#ffffff" stroke-width="6"/><polygon points="0,0 60,40 M60,0 0,40" stroke="#c8102e" stroke-width="2"/><rect x="25" width="10" height="40" fill="#ffffff"/><rect y="15" width="60" height="10" fill="#ffffff"/><rect x="27" width="6" height="40" fill="#c8102e"/><rect y="17" width="60" height="6" fill="#c8102e"/></svg>', bgTheme: { court: '#081738', lines: '#ffffff', net: '#c8102e' }, pA: ["#012169", "#ffffff", "#c8102e"], pB: ["#c8102e", "#012169"], bCol: "#ffffff", glow: "#c8102e" },
+      { name: "USA", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#b22234"/><rect y="4" width="60" height="4" fill="#ffffff"/><rect y="12" width="60" height="4" fill="#ffffff"/><rect y="20" width="60" height="4" fill="#ffffff"/><rect y="28" width="60" height="4" fill="#ffffff"/><rect y="36" width="60" height="4" fill="#ffffff"/><rect width="25" height="20" fill="#3c3b6e"/></svg>', bgTheme: { court: '#101b38', lines: '#ffffff', net: '#b22234' }, pA: ["#b22234", "#ffffff", "#3c3b6e"], pB: ["#3c3b6e", "#b22234"], bCol: "#ffffff", glow: "#3c3b6e" },
+      { name: "Vietnam", flagSvg: '<svg class="flag-icon" viewBox="0 0 60 40"><rect width="60" height="40" fill="#da251d"/><polygon points="30,8 33,18 43,18 35,24 38,34 30,28 22,34 25,24 17,18 27,18" fill="#ffff00"/></svg>', bgTheme: { court: '#380a0a', lines: '#ffff00', net: '#ff4444' }, pA: ["#da251d", "#ffff00"], pB: ["#da251d", "#ff8800"], bCol: "#ffff00", glow: "#da251d" }
+    ];
+
+    /* GRADIENT ARCADE SKINS */
+    const GRADIENT_SKINS = [
+      { id: 'grad_neon', name: 'NEON MATRIX', price: 350, pCol: ['#00f0ff', '#bc13fe'], bCol: '#00f0ff', glow: '#00f0ff' },
+      { id: 'grad_solar', name: 'SOLAR FLARE', price: 380, pCol: ['#ff0077', '#ffb703'], bCol: '#ffe600', glow: '#ff0077' },
+      { id: 'grad_cyber', name: 'CYBER LIME', price: 420, pCol: ['#00ffaa', '#0077ff'], bCol: '#00ffaa', glow: '#00ffaa' },
+      { id: 'grad_void', name: 'VOID SPECTRE', price: 500, pCol: ['#9900ef', '#ff0055', '#ffffff'], bCol: '#ffffff', glow: '#bc13fe' }
+    ];
+
+    /* =========================================================
+       GLOBAL LANGUAGES (ALPHABETICAL ORDER)
+       ========================================================= */
+    const GLOBAL_LANGUAGES = [
+      { code: 'ar', name: 'Arabic (العربية)' },
+      { code: 'bn', name: 'Bengali (বাংলা)' },
+      { code: 'zh', name: 'Chinese / Mandarin (中文)' },
+      { code: 'en', name: 'English' },
+      { code: 'fr', name: 'French (Français)' },
+      { code: 'de', name: 'German (Deutsch)' },
+      { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+      { code: 'ha', name: 'Hausa' },
+      { code: 'hi', name: 'Hindi (हिन्दी)' },
+      { code: 'id', name: 'Indonesian (Bahasa Indonesia)' },
+      { code: 'it', name: 'Italian (Italiano)' },
+      { code: 'ja', name: 'Japanese (日本語)' },
+      { code: 'jv', name: 'Javanese (Basa Jawa)' },
+      { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+      { code: 'ko', name: 'Korean (한국어)' },
+      { code: 'mr', name: 'Marathi (मराठी)' },
+      { code: 'fa', name: 'Persian (فارسی)' },
+      { code: 'pl', name: 'Polish (Polski)' },
+      { code: 'pt', name: 'Portuguese (Português)' },
+      { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+      { code: 'ru', name: 'Russian (Русский)' },
+      { code: 'es', name: 'Spanish (Español)' },
+      { code: 'sw', name: 'Swahili (Kiswahili)' },
+      { code: 'ta', name: 'Tamil (தமிழ்)' },
+      { code: 'te', name: 'Telugu (తెలుగు)' },
+      { code: 'th', name: 'Thai (ไทย)' },
+      { code: 'tr', name: 'Turkish (Türkçe)' },
+      { code: 'uk', name: 'Ukrainian (Українська)' },
+      { code: 'ur', name: 'Urdu (اردو)' },
+      { code: 'vi', name: 'Vietnamese (Tiếng Việt)' }
+    ];
+
+    let currentSelectedLang = localStorage.getItem('nt_lang') || 'en';
+
+    function renderLanguagesList(filter = '') {
+      const container = document.getElementById('langListContainer');
+      container.innerHTML = '';
+      const f = filter.toLowerCase().trim();
+      const filtered = GLOBAL_LANGUAGES.filter(l => l.name.toLowerCase().includes(f));
+
+      filtered.forEach(lang => {
+        const item = document.createElement('div');
+        item.className = 'lang-item' + (lang.code === currentSelectedLang ? ' selected' : '');
+        item.innerHTML = `<span>${lang.name}</span><span>${lang.code === currentSelectedLang ? '✓' : ''}</span>`;
+        item.onclick = () => {
+          currentSelectedLang = lang.code;
+          localStorage.setItem('nt_lang', lang.code);
+          renderLanguagesList(document.getElementById('langSearchInput').value);
+        };
+        container.appendChild(item);
+      });
+    }
+
+    function filterLanguages(val) { renderLanguagesList(val); }
+
+    /* =========================================================
+       ECONOMY & STATE
+       ========================================================= */
+    let coins = parseInt(localStorage.getItem('nt_coins') || '300', 10);
+    let unlockedSkins = JSON.parse(localStorage.getItem('nt_unlocked_skins') || '["default"]');
+    let unlockedCourts = JSON.parse(localStorage.getItem('nt_unlocked_courts') || '["cyber","classic","grass","clay","synthwave","space","frost","tokyo"]');
+    let equippedSkin = localStorage.getItem('nt_equipped_skin') || 'default';
+    let userBirthday = localStorage.getItem('nt_user_birthday') || '';
+
+    let inventory = JSON.parse(localStorage.getItem('nt_inventory') || '{"shield":1,"titan":1,"chrono":0,"hyper":0}');
+    let activePowerups = { shield: false, titan: false, chrono: false, hyper: false };
+
+    function addCoins(amount) {
+      coins += amount;
+      localStorage.setItem('nt_coins', coins);
+      document.getElementById('coinBalanceDisplay').textContent = coins;
+      AudioEngine.coinChime();
+    }
+
+    function saveInventory() {
+      localStorage.setItem('nt_inventory', JSON.stringify(inventory));
+      updateShopDisplay();
+    }
+
+    function updateShopDisplay() {
+      document.getElementById('coinBalanceDisplay').textContent = coins;
+      document.getElementById('ownedShieldCount').textContent = inventory.shield;
+      document.getElementById('ownedTitanCount').textContent = inventory.titan;
+      document.getElementById('ownedChronoCount').textContent = inventory.chrono;
+      document.getElementById('ownedHyperCount').textContent = inventory.hyper;
+    }
+
+    function buyPowerup(type, price) {
+      if (coins >= price) {
+        coins -= price;
+        inventory[type] = (inventory[type] || 0) + 1;
+        localStorage.setItem('nt_coins', coins);
+        saveInventory();
+      } else {
+        alert("Not enough coins! Play rallies and matches to earn coins.");
+      }
+    }
+
+    function buySkin(skinId, price) {
+      if (coins >= price) {
+        coins -= price;
+        unlockedSkins.push(skinId);
+        equippedSkin = skinId;
+        localStorage.setItem('nt_coins', coins);
+        localStorage.setItem('nt_unlocked_skins', JSON.stringify(unlockedSkins));
+        localStorage.setItem('nt_equipped_skin', equippedSkin);
+        updateShopDisplay();
+        renderShopSkins();
+        AudioEngine.coinChime();
+      } else {
+        alert("Not enough coins to unlock this skin!");
+      }
+    }
+
+    /* =========================================================
+       COURTS DEFINITIONS (BIRTHDAY COURT STRICTLY RESTRICTED TO TODAY'S DOB)
+       ========================================================= */
+    const ALL_COURTS = [
+      { id: 'cyber', name: '⚡ CYBER NEON', price: 0, preview: 'background:#090a14; border:1px solid #00f0ff;' },
+      { id: 'classic', name: '🎾 CLASSIC BLUE', price: 0, preview: 'background:#17406a;' },
+      { id: 'grass', name: '🌿 EMERALD TURF', price: 250, preview: 'background:repeating-linear-gradient(90deg, #17471f, #17471f 6px, #1d5727 6px, #1d5727 12px);' },
+      { id: 'clay', name: '🧱 ROLAND CLAY', price: 250, preview: 'background:#6e2b17;' },
+      { id: 'synthwave', name: '🌆 SYNTHWAVE', price: 400, preview: 'background:linear-gradient(180deg, #100122 0%, #2e084d 100%);' },
+      { id: 'space', name: '🌌 GALACTIC VOID', price: 450, preview: 'background:radial-gradient(circle, #1a0836 0%, #05020c 100%);' },
+      { id: 'frost', name: '❄️ ARCTIC FROST', price: 450, preview: 'background:linear-gradient(135deg, #0b2238 0%, #03101c 100%);' },
+      { id: 'tokyo', name: '🌸 TOKYO CYBER', price: 500, preview: 'background:#0d0214; border:1px solid #ff0077;' },
+      { id: 'birthday', name: '🎂 BIRTHDAY ARENA', price: 'DOB ONLY', preview: 'background:linear-gradient(135deg, #2b0036, #5c0042);', icon: '🎂🎉' }
+    ];
+
+    function isTodayUserBirthday() {
+      if (!userBirthday) return false;
+      const today = new Date();
+      const parts = userBirthday.split('-').map(Number);
+      if (parts.length >= 3) {
+        return (today.getMonth() + 1 === parts[1] && today.getDate() === parts[2]);
+      }
+      return false;
+    }
+
+    function selectCourt(cId) {
+      if (cId === 'birthday') {
+        if (!userBirthday) {
+          openBirthdayModal();
+          return;
+        }
+        if (!isTodayUserBirthday()) {
+          alert("🔒 Birthday Special Arena is locked! It becomes available ONLY on the date of your birthday!");
+          settings.court = 'cyber';
+          document.getElementById('courtSelect').value = 'cyber';
+          return;
+        }
+      }
+      settings.court = cId;
+      document.getElementById('courtSelect').value = cId;
+    }
+
+    /* BIRTHDAY PARTICLES ENGINE */
+    const birthdayParticles = [];
+    for (let i = 0; i < 28; i++) {
+      birthdayParticles.push({
+        x: Math.random() * 850,
+        y: Math.random() * 530,
+        vy: Math.random() * 0.8 + 0.4,
+        char: ['🎂', '🧁', '🎉', '🎊', '✨', '🎈'][Math.floor(Math.random() * 6)],
+        size: Math.random() * 12 + 14,
+        rot: Math.random() * Math.PI,
+        vRot: (Math.random() - 0.5) * 0.03
+      });
+    }
+
+    function checkBirthdayStatus() {
+      if (isTodayUserBirthday()) {
+        document.getElementById('birthdayBanner').style.display = 'block';
+        if (!sessionStorage.getItem('nt_bday_gift_claimed')) {
+          sessionStorage.setItem('nt_bday_gift_claimed', 'true');
+          addCoins(500);
+          alert("🎉 HAPPY BIRTHDAY! You received +500 Celebration Coins & Birthday Arena is UNLOCKED today! 🎂");
+        }
+      } else {
+        document.getElementById('birthdayBanner').style.display = 'none';
+        if (settings.court === 'birthday') {
+          settings.court = 'cyber';
+          document.getElementById('courtSelect').value = 'cyber';
+        }
+      }
+    }
+
+    function openBirthdayModal() {
+      if (userBirthday) {
+        document.getElementById('bdayInput').value = userBirthday;
+        document.getElementById('bdayStatusMsg').textContent = `DOB saved: ${userBirthday}. Arena active only on your birthday.`;
+      }
+      showScreen('birthdayModal');
+    }
+
+    function submitBirthday() {
+      const val = document.getElementById('bdayInput').value;
+      if (!val) { alert("Please enter a valid Date of Birth!"); return; }
+      userBirthday = val;
+      localStorage.setItem('nt_user_birthday', val);
+      document.getElementById('settingsDobInput').value = val;
+      checkBirthdayStatus();
+      if (isTodayUserBirthday()) {
+        settings.court = 'birthday';
+        selectCourt('birthday');
+        document.getElementById('bdayStatusMsg').textContent = "🎉 It's your birthday today! Birthday Arena is UNLOCKED!";
+      } else {
+        document.getElementById('bdayStatusMsg').textContent = "DOB Saved! The Birthday Arena will automatically unlock on your birthday.";
+      }
+      AudioEngine.win();
+      setTimeout(() => showScreen('mainMenu'), 1200);
+    }
+
+    function saveDobFromSettings() {
+      const val = document.getElementById('settingsDobInput').value;
+      if (!val) { alert("Please select your Date of Birth!"); return; }
+      userBirthday = val;
+      localStorage.setItem('nt_user_birthday', val);
+      checkBirthdayStatus();
+      alert("DOB Saved! (Birthday Arena unlocks exclusively on your birthday).");
+    }
+
+    /* =========================================================
+       SHOP CONTROLLER (POWERUPS, SKINS, BACKGROUNDS)
+       ========================================================= */
+    function openShop(defaultTab = 'powerups') {
+      updateShopDisplay();
+      switchShopTab(defaultTab);
+      showScreen('shopMenu');
+    }
+
+    function switchShopTab(tab) {
+      document.getElementById('shopTabPowerups').classList.toggle('active', tab === 'powerups');
+      document.getElementById('shopTabSkins').classList.toggle('active', tab === 'skins');
+      document.getElementById('shopTabCourts').classList.toggle('active', tab === 'courts');
+
+      document.getElementById('shopPowerupsSection').style.display = (tab === 'powerups') ? 'grid' : 'none';
+      document.getElementById('shopSkinsSection').style.display = (tab === 'skins') ? 'grid' : 'none';
+      document.getElementById('shopCourtsSection').style.display = (tab === 'courts') ? 'grid' : 'none';
+
+      if (tab === 'skins') renderShopSkins();
+      if (tab === 'courts') renderShopCourts();
+    }
+
+    function renderShopSkins() {
+      const grid = document.getElementById('shopSkinsSection');
+      grid.innerHTML = '';
+
+      // Default Skin
+      const defCard = document.createElement('div');
+      defCard.className = 'skin-card' + (equippedSkin === 'default' ? ' active' : '');
+      defCard.innerHTML = `
+        <div class="skin-preview" style="background:linear-gradient(135deg, #00f0ff, #090a14);">
+          <div style="width:14px; height:14px; border-radius:50%; background:#ffe600; box-shadow:0 0 8px #ffe600;"></div>
+        </div>
+        <span class="skin-name">CYBER DEFAULT</span>
+        <span style="font-size:0.65rem; color:var(--p1); font-weight:700;">DEFAULT</span>
+        <div class="card-actions-row">
+          <button class="btn tertiary" onclick="trySkin('default')">TRY</button>
+          <button class="btn tertiary" onclick="equipSkin('default')">${equippedSkin === 'default' ? 'EQUIPPED' : 'EQUIP'}</button>
+        </div>
+      `;
+      grid.appendChild(defCard);
+
+      // Gradients
+      GRADIENT_SKINS.forEach(skin => {
+        const isUnlocked = unlockedSkins.includes(skin.id);
+        const isEquipped = (equippedSkin === skin.id);
+
+        const card = document.createElement('div');
+        card.className = 'skin-card' + (isEquipped ? ' active' : '');
+        card.innerHTML = `
+          <div class="skin-preview" style="background:linear-gradient(135deg, ${skin.pCol.join(', ')});">
+            <div style="width:14px; height:14px; border-radius:50%; background:${skin.bCol}; box-shadow:0 0 8px ${skin.glow};"></div>
+          </div>
+          <span class="skin-name">${skin.name}</span>
+          <span style="font-size:0.65rem; color:var(--coin); font-weight:700;">${isUnlocked ? 'OWNED' : '🪙 ' + skin.price}</span>
+          <div class="card-actions-row">
+            <button class="btn tertiary" onclick="trySkin('${skin.id}')">TRY</button>
+            ${isUnlocked 
+              ? `<button class="btn tertiary" style="color:var(--p1);" onclick="equipSkin('${skin.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`
+              : `<button class="btn gold" onclick="buySkin('${skin.id}', ${skin.price})">BUY</button>`
+            }
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // National Editions
+      TOP_32_COUNTRIES.forEach(c => {
+        const idA = `${c.name}_A`;
+        const idB = `${c.name}_B`;
+        const unlockedA = unlockedSkins.includes(idA);
+        const unlockedB = unlockedSkins.includes(idB);
+
+        const cardA = document.createElement('div');
+        cardA.className = 'skin-card' + (equippedSkin === idA ? ' active' : '');
+        cardA.innerHTML = `
+          <div class="skin-preview" style="background:linear-gradient(90deg, ${c.pA.join(', ')});">
+            <div style="width:14px; height:14px; border-radius:50%; background:${c.bCol}; box-shadow:0 0 8px ${c.glow};"></div>
+          </div>
+          <span class="skin-name">${c.flagSvg} ${c.name} [STRIPES]</span>
+          <span style="font-size:0.62rem; color:${unlockedA ? '#00f0ff' : '#888'};">${unlockedA ? 'OWNED' : '🏆 CHAMPION'}</span>
+          <div class="card-actions-row">
+            <button class="btn tertiary" onclick="trySkin('${idA}')">TRY</button>
+            ${unlockedA 
+              ? `<button class="btn tertiary" onclick="equipSkin('${idA}')">${equippedSkin === idA ? 'EQUIPPED' : 'EQUIP'}</button>`
+              : `<button class="btn tertiary" disabled style="opacity:0.5;">LOCKED</button>`
+            }
+          </div>
+        `;
+        grid.appendChild(cardA);
+
+        const cardB = document.createElement('div');
+        cardB.className = 'skin-card' + (equippedSkin === idB ? ' active' : '');
+        cardB.innerHTML = `
+          <div class="skin-preview" style="background:linear-gradient(135deg, ${c.pB.join(', ')});">
+            <div style="width:14px; height:14px; border-radius:50%; background:${c.bCol}; box-shadow:0 0 8px ${c.glow};"></div>
+          </div>
+          <span class="skin-name">${c.flagSvg} ${c.name} [PULSE]</span>
+          <span style="font-size:0.62rem; color:${unlockedB ? '#00f0ff' : '#888'};">${unlockedB ? 'OWNED' : '🏆 CHAMPION'}</span>
+          <div class="card-actions-row">
+            <button class="btn tertiary" onclick="trySkin('${idB}')">TRY</button>
+            ${unlockedB 
+              ? `<button class="btn tertiary" onclick="equipSkin('${idB}')">${equippedSkin === idB ? 'EQUIPPED' : 'EQUIP'}</button>`
+              : `<button class="btn tertiary" disabled style="opacity:0.5;">LOCKED</button>`
+            }
+          </div>
+        `;
+        grid.appendChild(cardB);
+      });
+    }
+
+    function renderShopCourts() {
+      const grid = document.getElementById('shopCourtsSection');
+      grid.innerHTML = '';
+      ALL_COURTS.forEach(court => {
+        const isUnlocked = unlockedCourts.includes(court.id);
+        const isCurrent = (settings.court === court.id);
+        const isBdayCourt = (court.id === 'birthday');
+        const bdayUnlockedToday = isBdayCourt && isTodayUserBirthday();
+
+        const card = document.createElement('div');
+        card.className = 'court-card' + (isCurrent ? ' active' : '');
+        card.innerHTML = `
+          <div class="court-preview" style="${court.preview}">${court.icon || ''}</div>
+          <span class="court-name">${court.name}</span>
+          <span style="font-size:0.65rem; color:var(--coin); font-weight:700;">
+            ${isBdayCourt ? (bdayUnlockedToday ? '🎉 UNLOCKED TODAY' : '🔒 ON YOUR DOB ONLY') : (isUnlocked ? 'OWNED' : '🪙 ' + court.price)}
+          </span>
+          <div class="card-actions-row">
+            ${isBdayCourt
+              ? (bdayUnlockedToday
+                  ? `<button class="btn tertiary" style="color:var(--p1);" onclick="selectCourt('birthday'); renderShopCourts();">${isCurrent ? 'ACTIVE' : 'SELECT'}</button>`
+                  : `<button class="btn gold" onclick="openBirthdayModal()">SET DOB</button>`)
+              : (isUnlocked
+                  ? `<button class="btn tertiary" style="color:var(--p1);" onclick="selectCourt('${court.id}'); renderShopCourts();">${isCurrent ? 'ACTIVE' : 'SELECT'}</button>`
+                  : `<button class="btn gold" onclick="buyCourt('${court.id}', ${court.price})">BUY</button>`)
+            }
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function buyCourt(courtId, price) {
+      if (coins >= price) {
+        coins -= price;
+        unlockedCourts.push(courtId);
+        settings.court = courtId;
+        localStorage.setItem('nt_coins', coins);
+        localStorage.setItem('nt_unlocked_courts', JSON.stringify(unlockedCourts));
+        updateShopDisplay();
+        renderShopCourts();
+        AudioEngine.coinChime();
+      } else {
+        alert("Not enough coins for this court!");
+      }
+    }
+
+    function equipSkin(sId) {
+      equippedSkin = sId;
+      localStorage.setItem('nt_equipped_skin', sId);
+      renderShopSkins();
+    }
+
+    function resolveSkinParams(skinKey) {
+      if (skinKey === 'default') {
+        return { pColors: ['#00f0ff', '#00f0ff'], ballColor: '#ffe600', ballGlow: 'rgba(255, 230, 0, 0.85)', paddleGlow: 'rgba(0, 240, 255, 0.7)' };
+      }
+      const g = GRADIENT_SKINS.find(s => s.id === skinKey);
+      if (g) return { pColors: g.pCol, ballColor: g.bCol, ballGlow: g.glow, paddleGlow: g.glow };
+      for (let c of TOP_32_COUNTRIES) {
+        if (skinKey === `${c.name}_A`) return { pColors: c.pA, ballColor: c.bCol, ballGlow: c.glow, paddleGlow: c.glow };
+        if (skinKey === `${c.name}_B`) return { pColors: c.pB, ballColor: c.bCol, ballGlow: c.glow, paddleGlow: c.glow };
+      }
+      return { pColors: ['#00f0ff'], ballColor: '#ffe600', ballGlow: 'rgba(255, 230, 0, 0.85)', paddleGlow: 'rgba(0, 240, 255, 0.7)' };
+    }
+
+    /* TRY SKIN ENGINE */
+    let tryRaf = null;
+    let tryPaddleY = 90;
+    let tryBall = { x: 230, y: 130, vx: 5, vy: 3, r: 7 };
+    let previewSkinKey = 'default';
+
+    function trySkin(skinKey) {
+      previewSkinKey = skinKey;
+      const modal = document.getElementById('trySkinModal');
+      document.getElementById('tryModalTitle').textContent = `PREVIEWING: ${skinKey.replace('_', ' ')}`;
+      modal.classList.add('active');
+
+      const tCanvas = document.getElementById('tryCanvas');
+      const tCtx = tCanvas.getContext('2d');
+      tryBall.x = 230; tryBall.y = 130; tryBall.vx = 5; tryBall.vy = 3;
+
+      function onMove(e) {
+        const rect = tCanvas.getBoundingClientRect();
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        tryPaddleY = Math.max(10, Math.min(260 - 60, (clientY - rect.top) * (260 / rect.height) - 30));
+      }
+
+      tCanvas.onmousemove = onMove;
+      tCanvas.ontouchmove = (e) => { e.preventDefault(); onMove(e); };
+
+      function loop() {
+        tryBall.x += tryBall.vx;
+        tryBall.y += tryBall.vy;
+        if (tryBall.y <= tryBall.r || tryBall.y >= 260 - tryBall.r) tryBall.vy *= -1;
+        if (tryBall.x >= 460 - tryBall.r) tryBall.vx *= -1;
+
+        if (tryBall.x - tryBall.r <= 32 && tryBall.y >= tryPaddleY && tryBall.y <= tryPaddleY + 60) {
+          tryBall.vx = Math.abs(tryBall.vx) * 1.05;
+          AudioEngine.paddleHit();
+        } else if (tryBall.x < 0) {
+          tryBall.x = 230; tryBall.y = 130; tryBall.vx = 5;
+        }
+
+        tCtx.fillStyle = '#070814';
+        tCtx.fillRect(0, 0, 460, 260);
+
+        const params = resolveSkinParams(previewSkinKey);
+        const grad = tCtx.createLinearGradient(20, tryPaddleY, 20, tryPaddleY + 60);
+        params.pColors.forEach((col, idx) => grad.addColorStop(idx / (params.pColors.length - 1 || 1), col));
+        tCtx.fillStyle = grad;
+        tCtx.shadowColor = params.paddleGlow;
+        tCtx.shadowBlur = 12;
+        tCtx.fillRect(20, tryPaddleY, 12, 60);
+
+        tCtx.fillStyle = params.ballColor;
+        tCtx.shadowColor = params.ballGlow;
+        tCtx.shadowBlur = 12;
+        tCtx.beginPath();
+        tCtx.arc(tryBall.x, tryBall.y, tryBall.r, 0, Math.PI * 2);
+        tCtx.fill();
+        tCtx.shadowBlur = 0;
+
+        tryRaf = requestAnimationFrame(loop);
+      }
+      cancelAnimationFrame(tryRaf);
+      tryRaf = requestAnimationFrame(loop);
+    }
+
+    function closeTryModal() {
+      cancelAnimationFrame(tryRaf);
+      document.getElementById('trySkinModal').classList.remove('active');
+    }
+
+    /* =========================================================
+       CANVAS & RENDERING
+       ========================================================= */
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    const V_WIDTH = 850;
+    const V_HEIGHT = 530;
+
+    let settings = {
+      baseSpeed: 8.5,
+      winningScore: 5,
+      volume: 0.7,
+      court: 'cyber',
+      username: localStorage.getItem('nt3021_player_name') || 'ACE_3021'
+    };
+
+    let gameState = 'MENU';
+    let aiDifficulty = 'medium';
+
+    let isTourneyMode = false;
+    let tourneyPlayerCountry = TOP_32_COUNTRIES[10]; // India
+    let tourneyCurrentAiCountry = TOP_32_COUNTRIES[3];  // China
+    let tourneyRoundIndex = 0;
+    let tourneyBracketData = [];
+
+    const TOURNEY_ROUNDS = [
+      { name: "ROUND OF 32", diff: "hard", tag: "AI: HARD", matches: 16 },
+      { name: "ROUND OF 16", diff: "hard", tag: "AI: PRO", matches: 8 },
+      { name: "QUARTER-FINALS", diff: "expert", tag: "AI: EXPERT 🔥", matches: 4 },
+      { name: "SEMI-FINALS", diff: "expert", tag: "AI: MASTER ⚡", matches: 2 },
+      { name: "GRAND FINAL", diff: "god", tag: "AI: CYBER GOD 💀", matches: 1 }
+    ];
+
+    const keys = {};
+    const paddleProps = { width: 14, height: 94, speed: 9.2 };
+
+    const player = { x: 35, y: V_HEIGHT / 2 - paddleProps.height / 2, w: paddleProps.width, h: paddleProps.height, score: 0, color: '#00f0ff', glow: 'rgba(0, 240, 255, 0.7)' };
+    const ai = { x: V_WIDTH - 35 - paddleProps.width, y: V_HEIGHT / 2 - paddleProps.height / 2, w: paddleProps.width, h: paddleProps.height, score: 0, color: '#ff0077', glow: 'rgba(255, 0, 119, 0.7)' };
+
+    const ball = { x: V_WIDTH / 2, y: V_HEIGHT / 2, radius: 8, vx: 0, vy: 0, speed: settings.baseSpeed, trail: [], maxTrail: 6 };
+
+    let particles = [];
+    let countdownVal = 3;
+    let countdownInterval = null;
+
+    /* Offscreen Background Cache */
+    const bgCanvas = document.createElement('canvas');
+    bgCanvas.width = V_WIDTH;
+    bgCanvas.height = V_HEIGHT;
+    const bgCtx = bgCanvas.getContext('2d');
+    let cachedCourtKey = null;
+
+    function renderCourtToCache(key) {
+      if (cachedCourtKey === key && key !== 'birthday') return;
+      cachedCourtKey = key;
+      const ix = 60, iy = 32, cw = V_WIDTH - ix * 2, ch = V_HEIGHT - iy * 2;
+
+      if (isTourneyMode && tourneyCurrentAiCountry) {
+        // Custom background for the active country in tournament
+        const theme = tourneyCurrentAiCountry.bgTheme;
+        bgCtx.fillStyle = theme.court;
+        bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        drawCourtLines(bgCtx, ix, iy, cw, ch, theme.lines);
+        drawTennisNet(bgCtx, theme.net, 'rgba(255,255,255,0.4)');
+        return;
+      }
+
+      switch (key) {
+        case 'classic':
+          bgCtx.fillStyle = '#17406a'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.fillStyle = '#1c5e3a'; bgCtx.fillRect(ix, iy, cw, ch);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, '#ffffff');
+          drawTennisNet(bgCtx, '#ffffff', 'rgba(255,255,255,0.4)');
+          break;
+        case 'grass':
+          const sw = 34;
+          for (let x = 0; x < V_WIDTH; x += sw) {
+            bgCtx.fillStyle = (Math.floor(x / sw) % 2 === 0) ? '#17471f' : '#1d5727';
+            bgCtx.fillRect(x, 0, sw, V_HEIGHT);
+          }
+          drawCourtLines(bgCtx, ix, iy, cw, ch, '#ffffff');
+          drawTennisNet(bgCtx, '#ffffff', 'rgba(255,255,255,0.4)');
+          break;
+        case 'clay':
+          bgCtx.fillStyle = '#6e2b17'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.fillStyle = '#a64424'; bgCtx.fillRect(ix, iy, cw, ch);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, '#fbf5ea');
+          drawTennisNet(bgCtx, '#fbf5ea', 'rgba(255,245,230,0.35)');
+          break;
+        case 'synthwave':
+          const grad = bgCtx.createLinearGradient(0, 0, 0, V_HEIGHT);
+          grad.addColorStop(0, '#100122'); grad.addColorStop(0.5, '#2e084d'); grad.addColorStop(1, '#0c0018');
+          bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, 'rgba(0, 240, 255, 0.6)');
+          drawTennisNet(bgCtx, '#ff0077', 'rgba(255, 0, 119, 0.5)');
+          break;
+        case 'space':
+          bgCtx.fillStyle = '#05020c'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          for (let s = 0; s < 45; s++) bgCtx.fillRect((s * 47) % V_WIDTH, (s * 83) % V_HEIGHT, 1.5, 1.5);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, 'rgba(188, 19, 254, 0.5)');
+          drawTennisNet(bgCtx, '#bc13fe', 'rgba(188, 19, 254, 0.3)');
+          break;
+        case 'frost':
+          bgCtx.fillStyle = '#03101c'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.fillStyle = '#08253d'; bgCtx.fillRect(ix, iy, cw, ch);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, 'rgba(160, 230, 255, 0.8)');
+          drawTennisNet(bgCtx, '#a0e6ff', 'rgba(160, 230, 255, 0.4)');
+          break;
+        case 'tokyo':
+          bgCtx.fillStyle = '#0a0110'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.fillStyle = '#170324'; bgCtx.fillRect(ix, iy, cw, ch);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, '#ff0077');
+          drawTennisNet(bgCtx, '#00f0ff', 'rgba(0, 240, 255, 0.4)');
+          break;
+        case 'birthday':
+          const bGrad = bgCtx.createLinearGradient(0, 0, V_WIDTH, V_HEIGHT);
+          bGrad.addColorStop(0, '#22002b'); bGrad.addColorStop(0.5, '#4a003f'); bGrad.addColorStop(1, '#1b0024');
+          bgCtx.fillStyle = bGrad; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          drawCourtLines(bgCtx, ix, iy, cw, ch, '#ff66cc');
+          drawTennisNet(bgCtx, '#ffe600', 'rgba(255, 102, 204, 0.5)');
+          break;
+        case 'cyber':
+        default:
+          bgCtx.fillStyle = '#090a14'; bgCtx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+          bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          bgCtx.lineWidth = 4; bgCtx.setLineDash([12, 12]);
+          bgCtx.beginPath(); bgCtx.moveTo(V_WIDTH / 2, 0); bgCtx.lineTo(V_WIDTH / 2, V_HEIGHT); bgCtx.stroke();
+          bgCtx.setLineDash([]);
+          break;
+      }
+    }
+
+    function drawTennisNet(tCtx, band, mesh) {
+      const netX = V_WIDTH / 2;
+      tCtx.strokeStyle = mesh;
+      tCtx.lineWidth = 1.5;
+      for (let y = 10; y < V_HEIGHT - 10; y += 12) {
+        tCtx.beginPath(); tCtx.moveTo(netX - 3, y); tCtx.lineTo(netX + 3, y); tCtx.stroke();
+      }
+      tCtx.strokeStyle = band;
+      tCtx.lineWidth = 3;
+      tCtx.beginPath(); tCtx.moveTo(netX, 0); tCtx.lineTo(netX, V_HEIGHT); tCtx.stroke();
+    }
+
+    function drawCourtLines(tCtx, ix, iy, cw, ch, col) {
+      tCtx.strokeStyle = col;
+      tCtx.lineWidth = 3;
+      tCtx.strokeRect(ix, iy, cw, ch);
+      const alley = 42;
+      tCtx.beginPath();
+      tCtx.moveTo(ix, iy + alley); tCtx.lineTo(ix + cw, iy + alley);
+      tCtx.moveTo(ix, iy + ch - alley); tCtx.lineTo(ix + cw, iy + ch - alley);
+      const sDist = 175;
+      tCtx.moveTo(V_WIDTH / 2 - sDist, iy + alley); tCtx.lineTo(V_WIDTH / 2 - sDist, iy + ch - alley);
+      tCtx.moveTo(V_WIDTH / 2 + sDist, iy + alley); tCtx.lineTo(V_WIDTH / 2 + sDist, iy + ch - alley);
+      tCtx.moveTo(V_WIDTH / 2 - sDist, V_HEIGHT / 2); tCtx.lineTo(V_WIDTH / 2 + sDist, V_HEIGHT / 2);
+      tCtx.stroke();
+    }
+
+    /* PADDLE CONTROLS */
+    function setPaddleY(clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = V_HEIGHT / rect.height;
+      const arenaY = (clientY - rect.top) * scaleY;
+      player.y = Math.max(10, Math.min(V_HEIGHT - player.h - 10, arenaY - player.h / 2));
+    }
+
+    const container = document.getElementById('game-container');
+    container.addEventListener('mousemove', (e) => {
+      if (gameState === 'PLAYING' || gameState === 'COUNTDOWN') setPaddleY(e.clientY);
+    });
+
+    container.addEventListener('touchstart', (e) => {
+      if (gameState === 'PLAYING' || gameState === 'COUNTDOWN') {
+        if (e.touches.length > 0) setPaddleY(e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+      if (gameState === 'PLAYING' || gameState === 'COUNTDOWN') {
+        e.preventDefault();
+        if (e.touches.length > 0) setPaddleY(e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'KeyP' && (gameState === 'PLAYING' || gameState === 'PAUSED')) togglePause();
+    });
+    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+    /* HARD PREDICTIVE AI */
+    let aiTargetY = V_HEIGHT / 2;
+    let aiTimer = 0;
+
+    function calculateBallLandingY() {
+      if (ball.vx <= 0) return V_HEIGHT / 2;
+      let simX = ball.x, simY = ball.y, simVx = ball.vx, simVy = ball.vy;
+      while (simX < ai.x) {
+        simX += simVx; simY += simVy;
+        if (simY <= ball.radius || simY >= V_HEIGHT - ball.radius) simVy *= -1;
+      }
+      return simY;
+    }
+
+    function updateAI() {
+      aiTimer++;
+      let refreshRate = 4;
+      let moveSpeed = paddleProps.speed * 1.05;
+      let error = 6;
+
+      switch(aiDifficulty) {
+        case 'easy': refreshRate = 10; moveSpeed = paddleProps.speed * 0.75; error = 20; break;
+        case 'medium': refreshRate = 5; moveSpeed = paddleProps.speed * 0.95; error = 8; break;
+        case 'hard': refreshRate = 2; moveSpeed = paddleProps.speed * 1.25; error = 2; break;
+        case 'expert': refreshRate = 1; moveSpeed = paddleProps.speed * 1.5; error = 0; break;
+        case 'god': refreshRate = 1; moveSpeed = paddleProps.speed * 1.75; error = 0; break;
+      }
+
+      if (aiTimer >= refreshRate) {
+        aiTimer = 0;
+        if (aiDifficulty === 'hard' || aiDifficulty === 'expert' || aiDifficulty === 'god') {
+          const predicted = calculateBallLandingY();
+          const edgeOffset = (ball.vy > 0 ? 1 : -1) * (ai.h * 0.35);
+          aiTargetY = predicted - edgeOffset;
+        } else {
+          aiTargetY = (ball.vx > 0) ? (ball.y + (Math.random() - 0.5) * error) : (V_HEIGHT / 2);
+        }
+      }
+
+      const center = ai.y + ai.h / 2;
+      const delta = aiTargetY - center;
+      if (Math.abs(delta) > 3) {
+        ai.y += (delta > 0) ? Math.min(delta, moveSpeed) : Math.max(delta, -moveSpeed);
+      }
+    }
+
+    function updatePaddles() {
+      if (keys['KeyW'] || keys['ArrowUp']) player.y -= paddleProps.speed;
+      if (keys['KeyS'] || keys['ArrowDown']) player.y += paddleProps.speed;
+      updateAI();
+      player.y = Math.max(10, Math.min(V_HEIGHT - player.h - 10, player.y));
+      ai.y = Math.max(10, Math.min(V_HEIGHT - ai.h - 10, ai.y));
+    }
+
+    function checkPaddleBounce(p, isLeft) {
+      const withinX = isLeft
+        ? (ball.x - ball.radius <= p.x + p.w && ball.x + ball.radius >= p.x)
+        : (ball.x + ball.radius >= p.x && ball.x - ball.radius <= p.x + p.w);
+      const withinY = ball.y >= p.y - 4 && ball.y <= p.y + p.h + 4;
+
+      if (withinX && withinY) {
+        ball.x = isLeft ? p.x + p.w + ball.radius : p.x - ball.radius;
+        const hitOffset = (ball.y - (p.y + p.h / 2)) / (p.h / 2);
+        const maxBounceAngle = (5 * Math.PI) / 12;
+        const bounceAngle = hitOffset * maxBounceAngle;
+
+        let speedBoost = 1.055;
+        if (isLeft && activePowerups.hyper && Math.abs(hitOffset) > 0.55) {
+          speedBoost = 1.25;
+          createSparks(ball.x, ball.y, '#ff4500', 20);
+        }
+
+        ball.speed = Math.min(ball.speed * speedBoost, 22);
+        const direction = isLeft ? 1 : -1;
+        ball.vx = direction * ball.speed * Math.cos(bounceAngle);
+        ball.vy = ball.speed * Math.sin(bounceAngle);
+        if (Math.abs(ball.vx) < 3.5) ball.vx = direction * 3.5;
+
+        AudioEngine.paddleHit();
+        createSparks(ball.x, ball.y, p.color, 12);
+        if (isLeft) addCoins(1);
+      }
+    }
+
+    function updateBall() {
+      ball.trail.push({ x: ball.x, y: ball.y });
+      if (ball.trail.length > ball.maxTrail) ball.trail.shift();
+
+      let curVx = ball.vx;
+      let curVy = ball.vy;
+      if (activePowerups.chrono && ball.x < V_WIDTH * 0.48 && ball.vx < 0) {
+        curVx *= 0.65; curVy *= 0.65;
+      }
+
+      ball.x += curVx;
+      ball.y += curVy;
+
+      if (ball.y - ball.radius <= 0) {
+        ball.y = ball.radius; ball.vy *= -1; AudioEngine.wallHit(); createSparks(ball.x, ball.y, '#fff', 8);
+      } else if (ball.y + ball.radius >= V_HEIGHT) {
+        ball.y = V_HEIGHT - ball.radius; ball.vy *= -1; AudioEngine.wallHit(); createSparks(ball.x, ball.y, '#fff', 8);
+      }
+
+      checkPaddleBounce(player, true);
+      checkPaddleBounce(ai, false);
+
+      if (ball.x + ball.radius < 0) {
+        if (activePowerups.shield) {
+          activePowerups.shield = false; ball.x = ball.radius + 8; ball.vx = Math.abs(ball.vx) * 1.1;
+          createSparks(10, ball.y, '#00f0ff', 30); AudioEngine.wallHit(); return;
+        }
+        ai.score++; AudioEngine.score(); createSparks(0, ball.y, ai.color, 20); handleScore(2);
+      } else if (ball.x - ball.radius > V_WIDTH) {
+        player.score++; addCoins(10); AudioEngine.score(); createSparks(V_WIDTH, ball.y, player.color, 20); handleScore(1);
+      }
+    }
+
+    function handleScore(scorer) {
+      if (player.score >= settings.winningScore || ai.score >= settings.winningScore) {
+        endGame(player.score >= settings.winningScore ? 1 : 2);
+      } else {
+        startRoundCountdown(scorer === 1 ? 2 : 1);
+      }
+    }
+
+    function endGame(winner) {
+      gameState = 'GAMEOVER';
+      document.getElementById('hud').style.display = 'none';
+      document.getElementById('inGameControlsRight').style.display = 'none';
+
+      if (isTourneyMode) {
+        if (winner === 1) {
+          AudioEngine.win();
+          addCoins(150 + tourneyRoundIndex * 100);
+
+          const curStageMatches = tourneyBracketData[tourneyRoundIndex];
+          curStageMatches[0].scoreP1 = player.score;
+          curStageMatches[0].scoreP2 = ai.score;
+          curStageMatches[0].winner = curStageMatches[0].team1;
+
+          if (tourneyRoundIndex >= TOURNEY_ROUNDS.length - 1) {
+            addCoins(1000);
+            showChampionRewardChoice();
+          } else {
+            tourneyRoundIndex++;
+            advanceTournamentRound();
+            setupTourneyMatchPreview();
+            showScreen('tourneyBracketMenu');
+          }
+        } else {
+          const curStageMatches = tourneyBracketData[tourneyRoundIndex];
+          curStageMatches[0].scoreP1 = player.score;
+          curStageMatches[0].scoreP2 = ai.score;
+          curStageMatches[0].winner = curStageMatches[0].team2;
+          const stageName = TOURNEY_ROUNDS[tourneyRoundIndex].name;
+          const opp = curStageMatches[0].team2;
+          document.getElementById('knockoutDesc').textContent = `Defeated by ${opp.name} (${ai.score} - ${player.score}) in ${stageName}.`;
+          showScreen('tourneyKnockoutMenu');
+        }
+      } else {
+        AudioEngine.win();
+        if (winner === 1) addCoins(50);
+        const title = document.getElementById('winnerTitle');
+        const score = document.getElementById('finalScore');
+        title.textContent = (winner === 1) ? `${settings.username} WINS!` : 'AI WINS!';
+        title.style.color = (winner === 1) ? player.color : ai.color;
+        score.textContent = `${player.score}  —  ${ai.score}`;
+        showScreen('gameOverMenu');
+      }
+    }
+
+    function showChampionRewardChoice() {
+      const container = document.getElementById('champChoiceGrid');
+      container.innerHTML = '';
+      const c = tourneyPlayerCountry;
+      document.getElementById('champRewardDesc').textContent = `${c.name.toUpperCase()} HAS WON THE WORLD CHAMPIONSHIP!`;
+
+      const idA = `${c.name}_A`;
+      const idB = `${c.name}_B`;
+
+      const cardA = document.createElement('div');
+      cardA.className = 'skin-card';
+      cardA.innerHTML = `
+        <div class="skin-preview" style="background:linear-gradient(90deg, ${c.pA.join(', ')});">
+          <div style="width:14px; height:14px; border-radius:50%; background:${c.bCol};"></div>
+        </div>
+        <span class="skin-name">${c.flagSvg} ${c.name} [STRIPES]</span>
+        <button class="btn gold" style="width:100%; margin-top:4px;" onclick="claimChampionSkin('${idA}')">SELECT THIS LOOK</button>
+      `;
+
+      const cardB = document.createElement('div');
+      cardB.className = 'skin-card';
+      cardB.innerHTML = `
+        <div class="skin-preview" style="background:linear-gradient(135deg, ${c.pB.join(', ')});">
+          <div style="width:14px; height:14px; border-radius:50%; background:${c.bCol};"></div>
+        </div>
+        <span class="skin-name">${c.flagSvg} ${c.name} [PULSE]</span>
+        <button class="btn gold" style="width:100%; margin-top:4px;" onclick="claimChampionSkin('${idB}')">SELECT THIS LOOK</button>
+      `;
+
+      container.appendChild(cardA);
+      container.appendChild(cardB);
+      showScreen('tourneyChampionRewardMenu');
+    }
+
+    function claimChampionSkin(skinKey) {
+      if (!unlockedSkins.includes(skinKey)) {
+        unlockedSkins.push(skinKey);
+        localStorage.setItem('nt_unlocked_skins', JSON.stringify(unlockedSkins));
+      }
+      equippedSkin = skinKey;
+      localStorage.setItem('nt_equipped_skin', skinKey);
+      openShop('skins');
+    }
+
+    /* =========================================================
+       WORLD CHAMPIONSHIP BRACKET ENGINE
+       ========================================================= */
+    function renderNationSelectionGrid() {
+      const grid = document.getElementById('countryListGrid');
+      grid.innerHTML = '';
+      TOP_32_COUNTRIES.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'country-card' + (c.name === tourneyPlayerCountry.name ? ' selected' : '');
+        item.innerHTML = `${c.flagSvg}<span style="font-family:'Rajdhani', sans-serif; font-weight:700; font-size:0.92rem;">${c.name}</span>`;
+        item.onclick = () => {
+          document.querySelectorAll('.country-card').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+          tourneyPlayerCountry = c;
+        };
+        grid.appendChild(item);
+      });
+    }
+
+    function openTourneySetup() {
+      syncUsername();
+      renderNationSelectionGrid();
+      showScreen('tourneyNationMenu');
+    }
+
+    function confirmTourneyNation() {
+      showScreen('tourneyCourtMenu');
+    }
+
+    function generateTournamentBracket() {
+      isTourneyMode = true;
+      tourneyRoundIndex = 0;
+      tourneyBracketData = [];
+
+      const speedVal = parseFloat(document.getElementById('tourneyBallSpeedSelect').value);
+      settings.baseSpeed = speedVal;
+
+      const pool = TOP_32_COUNTRIES.filter(c => c.name !== tourneyPlayerCountry.name);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      const r32Matches = [];
+      r32Matches.push({ matchId: 0, team1: tourneyPlayerCountry, team2: pool[0], scoreP1: null, scoreP2: null, winner: null, isUser: true });
+
+      for (let m = 1; m < 16; m++) {
+        r32Matches.push({ matchId: m, team1: pool[m * 2 - 1], team2: pool[m * 2], scoreP1: null, scoreP2: null, winner: null, isUser: false });
+      }
+      tourneyBracketData.push(r32Matches);
+      simulateAiMatchesInRound(0);
+
+      setupTourneyMatchPreview();
+      showScreen('tourneyBracketMenu');
+    }
+
+    function simulateAiMatchesInRound(rIdx) {
+      const matches = tourneyBracketData[rIdx];
+      matches.forEach((m) => {
+        if (!m.isUser && m.winner === null) {
+          const s1 = 5;
+          const s2 = Math.floor(Math.random() * 4);
+          const t1Wins = Math.random() > 0.5;
+          m.scoreP1 = t1Wins ? s1 : s2;
+          m.scoreP2 = t1Wins ? s2 : s1;
+          m.winner = t1Wins ? m.team1 : m.team2;
+        }
+      });
+    }
+
+    function advanceTournamentRound() {
+      const prevMatches = tourneyBracketData[tourneyRoundIndex - 1];
+      const nextMatchCount = TOURNEY_ROUNDS[tourneyRoundIndex].matches;
+      const nextMatches = [];
+
+      for (let i = 0; i < nextMatchCount; i++) {
+        const mPrev1 = prevMatches[i * 2];
+        const mPrev2 = prevMatches[i * 2 + 1];
+        nextMatches.push({ matchId: i, team1: mPrev1.winner, team2: mPrev2.winner, scoreP1: null, scoreP2: null, winner: null, isUser: (i === 0) });
+      }
+      tourneyBracketData.push(nextMatches);
+      simulateAiMatchesInRound(tourneyRoundIndex);
+    }
+
+    function setupTourneyMatchPreview() {
+      const curRound = TOURNEY_ROUNDS[tourneyRoundIndex];
+      const match = tourneyBracketData[tourneyRoundIndex][0];
+      tourneyCurrentAiCountry = match.team2;
+
+      document.getElementById('tourneyRoundHeader').textContent = curRound.name;
+      document.getElementById('tourneyDifficultyTag').textContent = curRound.tag;
+      document.getElementById('tourneyP1FlagBox').innerHTML = match.team1.flagSvg.replace('flag-icon', 'flag-large');
+      document.getElementById('tourneyP1Name').textContent = match.team1.name;
+      document.getElementById('tourneyAiFlagBox').innerHTML = match.team2.flagSvg.replace('flag-icon', 'flag-large');
+      document.getElementById('tourneyAiName').textContent = match.team2.name;
+    }
+
+    function viewFullBracket(selectedTabIdx = tourneyRoundIndex) {
+      const tabsBar = document.getElementById('bracketTabsBar');
+      tabsBar.innerHTML = '';
+      TOURNEY_ROUNDS.forEach((rnd, idx) => {
+        const tab = document.createElement('button');
+        tab.className = 'bracket-tab' + (idx === selectedTabIdx ? ' active' : '');
+        tab.textContent = rnd.name;
+        tab.onclick = () => viewFullBracket(idx);
+        tabsBar.appendChild(tab);
+      });
+
+      const list = document.getElementById('bracketMatchesList');
+      list.innerHTML = '';
+      const stageMatches = tourneyBracketData[selectedTabIdx];
+      if (!stageMatches) {
+        list.innerHTML = `<p style="grid-column:1/-1; color:#777; font-size:0.85rem; padding:20px;">Matches pending outcome.</p>`;
+      } else {
+        stageMatches.forEach((m, idx) => {
+          const card = document.createElement('div');
+          card.className = 'bracket-match-card' + (m.isUser ? ' user-match' : '');
+          const t1Win = m.winner && m.winner.name === m.team1.name;
+          const t2Win = m.winner && m.winner.name === m.team2.name;
+
+          card.innerHTML = `
+            <div style="font-size:0.65rem; color:#888; font-family:'Orbitron', monospace; display:flex; justify-content:space-between;">
+              <span>MATCH #${idx + 1}</span>
+              ${m.isUser ? '<span style="color:var(--p1);">YOUR MATCH</span>' : ''}
+            </div>
+            <div class="bracket-team-row ${t1Win ? 'winner' : ''}">
+              <span style="display:flex; align-items:center; gap:6px;">${m.team1.flagSvg} ${m.team1.name}</span>
+              <span>${m.scoreP1 !== null ? m.scoreP1 : '-'}</span>
+            </div>
+            <div class="bracket-team-row ${t2Win ? 'winner' : ''}">
+              <span style="display:flex; align-items:center; gap:6px;">${m.team2.flagSvg} ${m.team2.name}</span>
+              <span>${m.scoreP2 !== null ? m.scoreP2 : '-'}</span>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      }
+      showScreen('tourneyFullBracketMenu');
+    }
+
+    function startTourneyMatch() {
+      const curRound = TOURNEY_ROUNDS[tourneyRoundIndex];
+      const match = tourneyBracketData[tourneyRoundIndex][0];
+      aiDifficulty = curRound.diff;
+
+      activePowerups.shield = (inventory.shield > 0);
+      activePowerups.titan = (inventory.titan > 0);
+      activePowerups.chrono = (inventory.chrono > 0);
+      activePowerups.hyper = (inventory.hyper > 0);
+
+      if (activePowerups.shield) inventory.shield--;
+      if (activePowerups.titan) inventory.titan--;
+      if (activePowerups.chrono) inventory.chrono--;
+      if (activePowerups.hyper) inventory.hyper--;
+      saveInventory();
+
+      player.score = 0;
+      ai.score = 0;
+      player.h = activePowerups.titan ? paddleProps.height * 1.35 : paddleProps.height;
+      ai.h = paddleProps.height;
+      player.y = V_HEIGHT / 2 - player.h / 2;
+      ai.y = V_HEIGHT / 2 - ai.h / 2;
+
+      document.getElementById('hudPlayerTag').textContent = `${match.team1.name} vs ${match.team2.name}`;
+      
+      // HIDE header bar during matches so World Championship button NEVER overlaps matches!
+      document.getElementById('topControlsBar').style.display = 'none';
+      document.getElementById('hud').style.display = 'flex';
+      document.getElementById('inGameControlsRight').style.display = 'flex';
+
+      showScreen(null);
+      startRoundCountdown(1);
+    }
+
+    /* ZERO-LAG DRAW ENGINE */
+    function drawCourt() {
+      const currentCourt = isTourneyMode ? 'tourney' : settings.court;
+      renderCourtToCache(currentCourt);
+      ctx.drawImage(bgCanvas, 0, 0);
+
+      if (currentCourt === 'birthday') {
+        birthdayParticles.forEach(bp => {
+          bp.y += bp.vy; bp.rot += bp.vRot;
+          if (bp.y > V_HEIGHT + 20) { bp.y = -20; bp.x = Math.random() * V_WIDTH; }
+          ctx.save();
+          ctx.translate(bp.x, bp.y);
+          ctx.rotate(bp.rot);
+          ctx.font = `${bp.size}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(bp.char, 0, 0);
+          ctx.restore();
+        });
+      }
+
+      if (activePowerups.shield) {
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 15;
+        ctx.fillRect(8, 0, 6, V_HEIGHT);
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.font = "900 68px 'Orbitron', monospace";
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      const isLightCourt = (currentCourt === 'classic' || currentCourt === 'grass' || currentCourt === 'clay');
+      ctx.fillStyle = isLightCourt ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 240, 255, 0.2)';
+      ctx.fillText(player.score, V_WIDTH / 2 - 95, 24);
+      ctx.fillStyle = isLightCourt ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 0, 119, 0.2)';
+      ctx.fillText(ai.score, V_WIDTH / 2 + 95, 24);
+    }
+
+    function createSparks(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = Math.random() * 4 + 1;
+        particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, radius: Math.random() * 2.5 + 1, color, alpha: 1, decay: Math.random() * 0.04 + 0.02 });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPaddles() {
+      const skin = resolveSkinParams(equippedSkin);
+
+      const pGrad = ctx.createLinearGradient(player.x, player.y, player.x, player.y + player.h);
+      skin.pColors.forEach((col, idx) => pGrad.addColorStop(idx / (skin.pColors.length - 1 || 1), col));
+      ctx.fillStyle = pGrad;
+      ctx.shadowColor = skin.paddleGlow;
+      ctx.shadowBlur = 14;
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.strokeStyle = '#fff';
+      ctx.strokeRect(player.x, player.y, player.w, player.h);
+
+      ctx.fillStyle = ai.color;
+      ctx.shadowColor = ai.glow;
+      ctx.shadowBlur = 14;
+      ctx.fillRect(ai.x, ai.y, ai.w, ai.h);
+      ctx.strokeStyle = '#fff';
+      ctx.strokeRect(ai.x, ai.y, ai.w, ai.h);
+      ctx.shadowBlur = 0;
+    }
+
+    function drawBall() {
+      const skin = resolveSkinParams(equippedSkin);
+      for (let i = 0; i < ball.trail.length; i++) {
+        const pt = ball.trail[i];
+        const progress = (i + 1) / ball.trail.length;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, ball.radius * progress * 0.85, 0, Math.PI * 2);
+        ctx.fillStyle = skin.ballGlow.replace('rgb', 'rgba').replace(')', ', 0.12)');
+        ctx.fill();
+      }
+
+      ctx.fillStyle = skin.ballColor;
+      ctx.shadowColor = skin.ballGlow;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function resetBall(servingPlayer = 1) {
+      ball.x = V_WIDTH / 2;
+      ball.y = V_HEIGHT / 2;
+      ball.trail = [];
+      ball.speed = settings.baseSpeed;
+      const dir = servingPlayer === 1 ? -1 : 1;
+      const angle = (Math.random() * 0.8 - 0.4);
+      ball.vx = Math.cos(angle) * ball.speed * dir;
+      ball.vy = Math.sin(angle) * ball.speed;
+    }
+
+    function startRoundCountdown(servingPlayer = 1) {
+      gameState = 'COUNTDOWN';
+      resetBall(servingPlayer);
+      countdownVal = 3;
+      const cdEl = document.getElementById('countdown');
+      cdEl.style.display = 'block';
+      cdEl.textContent = countdownVal;
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        countdownVal--;
+        if (countdownVal > 0) cdEl.textContent = countdownVal;
+        else if (countdownVal === 0) cdEl.textContent = 'SERVE!';
+        else {
+          clearInterval(countdownInterval);
+          cdEl.style.display = 'none';
+          gameState = 'PLAYING';
+        }
+      }, 600);
+    }
+
+    function gameLoop() {
+      if (gameState === 'PLAYING') {
+        updatePaddles();
+        updateBall();
+      } else if (gameState === 'COUNTDOWN') {
+        updatePaddles();
+      }
+
+      updateParticles();
+      drawCourt();
+      drawPaddles();
+      drawParticles();
+      if (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') {
+        drawBall();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* =========================================================
+       CREATOR AD CONSOLE (Passcode: admin3021)
+       ========================================================= */
+    const CREATOR_PASSCODE = 'admin3021';
+    let adState = {
+      headline: localStorage.getItem('nt_ad_headline') || 'CYBER GRAND PRIX 3021 // REGISTRATIONS OPEN',
+      subtext: localStorage.getItem('nt_ad_subtext') || 'Claim your exclusive championship racket and power up!',
+      link: localStorage.getItem('nt_ad_link') || '#',
+      image: localStorage.getItem('nt_ad_img') || ''
+    };
+
+    function applyAdState() {
+      document.getElementById('adHeadlineText').textContent = adState.headline;
+      document.getElementById('adSubTextDisplay').textContent = adState.subtext;
+      const linkEl = document.getElementById('adMainLink');
+      linkEl.href = adState.link || '#';
+      if (!adState.link || adState.link === '#') linkEl.removeAttribute('target');
+      else linkEl.setAttribute('target', '_blank');
+
+      const imgEl = document.getElementById('adMainImg');
+      if (adState.image) {
+        imgEl.src = adState.image;
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.style.display = 'none';
+      }
+    }
+
+    function openAdminModal() {
+      document.getElementById('passcodeSection').style.display = 'block';
+      document.getElementById('adEditFields').style.display = 'none';
+      document.getElementById('creatorPasscode').value = '';
+      document.getElementById('passErr').style.display = 'none';
+      showScreen('adminAdModal');
+    }
+
+    function closeAdminModal() {
+      showScreen(gameState === 'MENU' ? 'mainMenu' : null);
+    }
+
+    function verifyCreatorPass() {
+      const entered = document.getElementById('creatorPasscode').value;
+      if (entered === CREATOR_PASSCODE) {
+        document.getElementById('passcodeSection').style.display = 'none';
+        document.getElementById('adEditFields').style.display = 'flex';
+        document.getElementById('adTextInput').value = adState.headline;
+        document.getElementById('adSubTextInput').value = adState.subtext;
+        document.getElementById('adLinkInput').value = adState.link;
+      } else {
+        document.getElementById('passErr').style.display = 'block';
+      }
+    }
+
+    let pendingImgBase64 = null;
+    document.getElementById('adPicUpload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => { pendingImgBase64 = evt.target.result; };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function saveCreatorAd() {
+      const newHead = document.getElementById('adTextInput').value.trim();
+      const newSub = document.getElementById('adSubTextInput').value.trim();
+      const newLink = document.getElementById('adLinkInput').value.trim();
+      if (newHead) adState.headline = newHead;
+      if (newSub) adState.subtext = newSub;
+      adState.link = newLink || '#';
+      if (pendingImgBase64 !== null) adState.image = pendingImgBase64;
+
+      localStorage.setItem('nt_ad_headline', adState.headline);
+      localStorage.setItem('nt_ad_subtext', adState.subtext);
+      localStorage.setItem('nt_ad_link', adState.link);
+      localStorage.setItem('nt_ad_img', adState.image);
+
+      applyAdState();
+      closeAdminModal();
+    }
+
+    function resetAdDefault() {
+      adState = {
+        headline: 'CYBER GRAND PRIX 3021 // REGISTRATIONS OPEN',
+        subtext: 'Claim your exclusive championship racket and power up!',
+        link: '#',
+        image: ''
+      };
+      localStorage.removeItem('nt_ad_headline');
+      localStorage.removeItem('nt_ad_subtext');
+      localStorage.removeItem('nt_ad_link');
+      localStorage.removeItem('nt_ad_img');
+      applyAdState();
+      closeAdminModal();
+    }
+
+    /* =========================================================
+       UI SCREEN CONTROLLER
+       ========================================================= */
+    const screens = {
+      mainMenu: document.getElementById('mainMenu'),
+      difficultyMenu: document.getElementById('difficultyMenu'),
+      settingsMenu: document.getElementById('settingsMenu'),
+      tutorialMenu: document.getElementById('tutorialMenu'),
+      birthdayModal: document.getElementById('birthdayModal'),
+      pauseMenu: document.getElementById('pauseMenu'),
+      gameOverMenu: document.getElementById('gameOverMenu'),
+      tourneyNationMenu: document.getElementById('tourneyNationMenu'),
+      tourneyCourtMenu: document.getElementById('tourneyCourtMenu'),
+      tourneyBracketMenu: document.getElementById('tourneyBracketMenu'),
+      tourneyFullBracketMenu: document.getElementById('tourneyFullBracketMenu'),
+      tourneyKnockoutMenu: document.getElementById('tourneyKnockoutMenu'),
+      tourneyChampionRewardMenu: document.getElementById('tourneyChampionRewardMenu'),
+      shopMenu: document.getElementById('shopMenu'),
+      adminAdModal: document.getElementById('adminAdModal')
+    };
+
+    function showScreen(name) {
+      Object.values(screens).forEach(s => { if(s) s.classList.remove('active'); });
+      if (screens[name]) screens[name].classList.add('active');
+
+      // Top control bar visible in menus, never during gameplay!
+      if (name === null) {
+        document.getElementById('topControlsBar').style.display = 'none';
+      } else {
+        document.getElementById('topControlsBar').style.display = 'flex';
+      }
+    }
+
+    function syncUsername() {
+      const val = document.getElementById('usernameInput').value.trim() || 'ACE_3021';
+      settings.username = val;
+      localStorage.setItem('nt3021_player_name', val);
+      document.getElementById('hudPlayerTag').textContent = `PILOT: ${val}`;
+    }
+
+    document.getElementById('usernameInput').addEventListener('input', syncUsername);
+
+    function startQuickGame(difficulty = 'medium') {
+      isTourneyMode = false;
+      tourneyCurrentAiCountry = null;
+      syncUsername();
+      aiDifficulty = difficulty;
+
+      activePowerups.shield = (inventory.shield > 0);
+      activePowerups.titan = (inventory.titan > 0);
+      activePowerups.chrono = (inventory.chrono > 0);
+      activePowerups.hyper = (inventory.hyper > 0);
+
+      if (activePowerups.shield) inventory.shield--;
+      if (activePowerups.titan) inventory.titan--;
+      if (activePowerups.chrono) inventory.chrono--;
+      if (activePowerups.hyper) inventory.hyper--;
+      saveInventory();
+
+      player.score = 0;
+      ai.score = 0;
+      player.h = activePowerups.titan ? paddleProps.height * 1.35 : paddleProps.height;
+      ai.h = paddleProps.height;
+      player.y = V_HEIGHT / 2 - player.h / 2;
+      ai.y = V_HEIGHT / 2 - ai.h / 2;
+
+      document.getElementById('hudPlayerTag').textContent = `PILOT: ${settings.username}`;
+
+      // Clean in-game UI without header bar or logo collision
+      document.getElementById('topControlsBar').style.display = 'none';
+      document.getElementById('hud').style.display = 'flex';
+      document.getElementById('inGameControlsRight').style.display = 'flex';
+
+      showScreen(null);
+      startRoundCountdown(1);
+    }
+
+    function restartMatch() {
+      player.score = 0;
+      ai.score = 0;
+      document.getElementById('hud').style.display = 'flex';
+      document.getElementById('inGameControlsRight').style.display = 'flex';
+      showScreen(null);
+      startRoundCountdown(1);
+    }
+
+    function togglePause() {
+      if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        showScreen('pauseMenu');
+      } else if (gameState === 'PAUSED') {
+        showScreen(null);
+        document.getElementById('topControlsBar').style.display = 'none';
+        gameState = 'PLAYING';
+      }
+    }
+
+    function quitToMenu() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      document.getElementById('countdown').style.display = 'none';
+      document.getElementById('hud').style.display = 'none';
+      document.getElementById('inGameControlsRight').style.display = 'none';
+      gameState = 'MENU';
+      showScreen('mainMenu');
+    }
+
+    function saveSettings() {
+      settings.volume = parseFloat(document.getElementById('volumeSlider').value);
+      settings.baseSpeed = parseFloat(document.getElementById('ballSpeedSelect').value);
+      settings.winningScore = parseInt(document.getElementById('winScoreSelect').value, 10);
+      AudioEngine.setVolume(settings.volume);
+    }
+
+    // UI Buttons
+    document.getElementById('btnPlay').addEventListener('click', () => showScreen('difficultyMenu'));
+    document.getElementById('btnSettings').addEventListener('click', () => {
+      document.getElementById('settingsDobInput').value = userBirthday;
+      renderLanguagesList();
+      showScreen('settingsMenu');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', togglePause);
+    document.getElementById('resumeBtn').addEventListener('click', togglePause);
+    document.getElementById('restartBtn').addEventListener('click', restartMatch);
+    document.getElementById('quitBtn').addEventListener('click', quitToMenu);
+
+    function handleMuteToggle() {
+      const isMuted = AudioEngine.toggleMute();
+      document.getElementById('muteIcon').textContent = isMuted ? '🔇' : '🔊';
+      document.getElementById('muteLabel').textContent = isMuted ? 'MUTED' : 'SOUND: ON';
+      document.getElementById('inGameMuteBtn').textContent = isMuted ? '🔇' : '🔊';
+      document.getElementById('globalMuteBtn').style.borderColor = isMuted ? '#ff0077' : 'rgba(0, 240, 255, 0.4)';
+      document.getElementById('globalMuteBtn').style.color = isMuted ? '#ff0077' : 'var(--p1)';
+    }
+
+    document.getElementById('globalMuteBtn').addEventListener('click', handleMuteToggle);
+    document.getElementById('inGameMuteBtn').addEventListener('click', handleMuteToggle);
+
+    // Initial Start
+    syncUsername();
+    applyAdState();
+    updateShopDisplay();
+    renderLanguagesList();
+    checkBirthdayStatus();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
